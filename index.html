@@ -1,0 +1,188 @@
+<!doctype html>
+<!--
+  Tride scene viewer — the web twin of TrideKit's TridePlayer: one <tride-scene> from ./tride-web, any
+  .trd opened or dropped on the page, a control for each binding and trigger, the scene's states,
+  events and problems. Plain HTML: no bundler, no build step.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="data:," />
+    <title>Tride — scenes in the browser</title>
+    <style>
+      :root { color-scheme: dark; }
+      html, body { margin: 0; height: 100%; background: #141416; color: #d8d8dc; font: 13px/1.4 system-ui, sans-serif; }
+      body { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 20px; padding: 20px; box-sizing: border-box; height: 100vh; }
+      #stage { display: flex; align-items: center; justify-content: center; min-height: 0; }
+      #frame { aspect-ratio: 402 / 874; height: min(100%, 874px); max-width: 100%; border-radius: 28px; overflow: hidden; background: #000; box-shadow: 0 0 0 1px #2a2a30, 0 24px 60px rgba(0, 0, 0, 0.6); }
+      body.dragging #frame { box-shadow: 0 0 0 2px #6aa8ff; }
+      tride-scene { display: block; width: 100%; height: 100%; }
+      tride-scene [slot] { font-size: 12px; color: #888; }
+      aside { display: flex; flex-direction: column; gap: 14px; min-height: 0; overflow: auto; }
+      h1 { font-size: 15px; font-weight: 600; margin: 0; }
+      h1 small { font-weight: 400; color: #8a8a92; }
+      section { display: flex; flex-direction: column; gap: 6px; }
+      section h2 { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #8a8a92; margin: 0; }
+      .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+      button, select, input, .button { font: inherit; color: inherit; background: #26262c; border: 1px solid #36363e; border-radius: 6px; padding: 5px 10px; }
+      button, select, .button { cursor: pointer; }
+      button:hover, select:hover, .button:hover { background: #30303a; }
+      input[type="text"], input[type="number"] { width: 110px; }
+      #contract { display: flex; flex-direction: column; gap: 6px; }
+      #contract .row > span:first-child { min-width: 130px; color: #b0b0b8; font: 12px ui-monospace, Menlo, monospace; }
+      input[type="range"] { flex: 1; min-width: 120px; padding: 0; }
+      label { display: flex; gap: 8px; align-items: center; color: #b0b0b8; }
+      pre { margin: 0; font: 11px/1.5 ui-monospace, Menlo, monospace; white-space: pre-wrap; word-break: break-word; color: #b8c0c8; }
+      #problems { color: #ff8a80; }
+      .muted { color: #8a8a92; margin: 0; }
+      @media (max-width: 760px) { body { grid-template-columns: 1fr; height: auto; } #frame { height: 70vh; } }
+    </style>
+    <script type="module" src="./tride-web/tride-web.js"></script>
+  </head>
+  <body>
+    <main id="stage">
+      <div id="frame">
+        <tride-scene id="scene" autoplay interactive
+                     filament-src="filament/filament.js" ibl-base="ibl">
+          <span slot="loading-fallback">loading…</span>
+          <span slot="error-fallback">the scene did not load — see "Problems"</span>
+        </tride-scene>
+      </div>
+    </main>
+    <aside>
+      <h1>Tride <small>scenes in the browser</small></h1>
+
+      <section>
+        <h2>Scene</h2>
+        <div class="row">
+          <label class="button">Open .trd…<input id="file" type="file" accept=".trd" hidden /></label>
+        </div>
+        <p class="muted">Or drop a <code>.trd</code> from Tride Editor on the page.</p>
+      </section>
+
+      <section>
+        <h2>The scene's bindings and triggers</h2>
+        <div id="contract"><p class="muted">—</p></div>
+        <p class="muted">Everything the scene declares (<code>availableBindings()</code>): a trigger is a button, an enum a
+          list, a number a field (Enter writes it); a computed value is the scene's own.</p>
+      </section>
+
+      <section><h2>States</h2><pre id="states">—</pre></section>
+      <section><h2>Events</h2><pre id="events">—</pre></section>
+      <section><h2>Problems</h2><pre id="problems">—</pre></section>
+    </aside>
+
+    <script type="module">
+      const el = document.getElementById('scene');
+      const $ = (id) => document.getElementById(id);
+      const events = [];
+      const problems = [];
+      let blobUrl = null;
+
+      const show = () => {
+        $('events').textContent = events.slice(-14).join('\n') || '—';
+        $('problems').textContent = problems.slice(-8).join('\n') || '—';
+      };
+      const report = (what, error) => {
+        problems.push(`${what}: ${error?.message ?? error}`);
+        show();
+      };
+      const showStates = () => {
+        const layers = el.scene?.layerStates() ?? [];
+        $('states').textContent = layers.map((l) => `${l.id}: ${l.state}`).join('\n') || '—';
+      };
+      const set = (name, value) => {
+        try { el.setInput(name, value); } catch (error) { report(name, error); }
+      };
+      const fire = (name) => {
+        try { el.trigger(name); } catch (error) { report(name, error); }
+      };
+
+      const load = (src) => {
+        if (blobUrl && blobUrl !== src) URL.revokeObjectURL(blobUrl);
+        el.setAttribute('src', src);
+      };
+
+      el.addEventListener('tride-ready', () => {
+        events.length = 0;
+        problems.length = 0;
+        show();
+        showStates();
+        showContract();
+      });
+      el.addEventListener('tride-event', (e) => { events.push(e.detail.name); show(); });
+      el.addEventListener('tride-state', (e) => {
+        events.push(`${e.detail.layerId}: ${e.detail.from} → ${e.detail.to}`);
+        show();
+        showStates();
+      });
+      // The viewer shows what the element reports; preventDefault() keeps it off the console.
+      el.addEventListener('tride-problem', (e) => { e.preventDefault(); report(e.detail.pointer || e.detail.code, e.detail.message); });
+      el.addEventListener('tride-error', (e) => { e.preventDefault(); report('loading', e.detail.error); });
+
+      $('file').addEventListener('change', () => {
+        const file = $('file').files?.[0];
+        if (file) { blobUrl = URL.createObjectURL(file); load(blobUrl); }
+      });
+      document.addEventListener('dragover', (e) => { e.preventDefault(); document.body.classList.add('dragging'); });
+      document.addEventListener('dragleave', () => document.body.classList.remove('dragging'));
+      document.addEventListener('drop', (e) => {
+        e.preventDefault();
+        document.body.classList.remove('dragging');
+        const file = e.dataTransfer?.files?.[0];
+        if (file) { blobUrl = URL.createObjectURL(file); load(blobUrl); }
+      });
+
+      /** One control per binding the scene declares, by its kind. */
+      const showContract = () => {
+        const box = $('contract');
+        box.replaceChildren();
+        const bindings = el.availableBindings();
+        if (bindings.length === 0) box.innerHTML = '<p class="muted">the scene declares nothing</p>';
+        for (const b of bindings) {
+          const row = document.createElement('div');
+          row.className = 'row';
+          const name = document.createElement('span');
+          name.textContent = b.name;
+          row.append(name);
+          if (b.computed) {
+            const f = document.createElement('span');
+            f.className = 'muted';
+            f.textContent = `= ${b.computed}`;
+            row.append(f);
+          } else if (b.kind === 'trigger') {
+            const button = document.createElement('button');
+            button.textContent = 'Fire';
+            button.addEventListener('click', () => fire(b.name));
+            row.append(button);
+          } else if (b.kind === 'enum') {
+            const select = document.createElement('select');
+            select.append(new Option('—', ''), ...b.options.map((o) => new Option(o, o)));
+            select.addEventListener('change', () => select.value && set(b.name, select.value));
+            row.append(select);
+          } else if (b.kind === 'bool') {
+            const box = document.createElement('input');
+            box.type = 'checkbox';
+            box.addEventListener('change', () => set(b.name, box.checked));
+            row.append(box);
+          } else if (b.kind === 'number') {
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.step = 'any';
+            input.addEventListener('keydown', (e) => {
+              if (e.key === 'Enter' && input.value !== '') set(b.name, Number(input.value));
+            });
+            row.append(input);
+          } else {
+            const kind = document.createElement('span');
+            kind.className = 'muted';
+            kind.textContent = `${b.kind} — from code`;
+            row.append(kind);
+          }
+          box.append(row);
+        }
+      };
+    </script>
+  </body>
+</html>

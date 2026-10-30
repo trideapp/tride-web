@@ -1,0 +1,25 @@
+<!doctype html>
+<!--
+  The smallest page with a Tride scene: one module script and one <tride-scene>. Put a .trd exported from
+  Tride Editor next to this page as scene.trd. Paths are relative to this folder; on your own site point
+  `src`, `filament-src` and `ibl-base` at where you serve them.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tride — a scene on a page</title>
+    <style>
+      html, body { margin: 0; height: 100%; background: #000; }
+      tride-scene { display: block; width: 100vw; height: 100vh; }
+    </style>
+    <script type="module" src="./tride-web/tride-web.js"></script>
+  </head>
+  <body>
+    <tride-scene src="scene.trd" autoplay interactive
+                 filament-src="filament/filament.js" ibl-base="ibl">
+      <span slot="loading-fallback" style="color:#888">loading…</span>
+      <span slot="error-fallback" style="color:#888">put a .trd from Tride Editor next to this page as scene.trd</span>
+    </tride-scene>
+  </body>
+</html>
