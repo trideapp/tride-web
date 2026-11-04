@@ -9,88 +9,75 @@ below that apply to each component; a text shared by many components is printed 
 
 | Component | Version | Licence | Source | Texts |
 |---|---|---|---|---|
-| @gltf-transform/core | 4.3.0 | MIT | github:donmccurdy/glTF-Transform | T2 |
-| @gltf-transform/extensions | 4.3.0 | MIT | github:donmccurdy/glTF-Transform | T2 |
-| @gltf-transform/functions | 4.3.0 | MIT | github:donmccurdy/glTF-Transform | T2 |
-| adler2 | 2.0.1 | 0BSD OR MIT OR Apache-2.0 | https://github.com/oyvindln/adler2 | T1, T3, T4 |
-| any_ascii | 0.3.3 | ISC | https://github.com/anyascii/anyascii | T5 |
-| base64 | 0.13.1 | MIT/Apache-2.0 | https://github.com/marshallpierce/rust-base64 | T1, T6 |
-| basisu (in Filament) | Filament 1.77.1 | (see text) | https://github.com/google/filament/tree/v1.77.1/third_party/basisu | T1, T7 |
-| bevy_mikktspace | 1.0.0 | Zlib AND (MIT OR Apache-2.0) | https://github.com/bevyengine/bevy_mikktspace | T1, T8 |
-| bitflags | 2.11.1 | MIT OR Apache-2.0 | https://github.com/bitflags/bitflags | T1, T9 |
-| bumpalo | 3.20.2 | MIT OR Apache-2.0 | https://github.com/fitzgen/bumpalo | T1, T10 |
-| bytemuck | 1.25.0 | Zlib OR Apache-2.0 OR MIT | https://github.com/Lokathor/bytemuck | T1, T11, T12 |
-| byteorder | 1.5.0 | Unlicense OR MIT | https://github.com/BurntSushi/byteorder | T13, T14, T15 |
-| cfg-if | 1.0.4 | MIT OR Apache-2.0 | https://github.com/rust-lang/cfg-if | T1, T16 |
-| cgltf (in Filament) | Filament 1.77.1 | (see text) | https://github.com/google/filament/tree/v1.77.1/third_party/cgltf | T17 |
-| crc32fast | 1.5.0 | MIT OR Apache-2.0 | https://github.com/srijs/rust-crc32fast | T1, T18 |
-| cwise-compiler | 1.1.3 | MIT | git://github.com/scijs/cwise-compiler.git | T19 |
-| draco (in Filament) | Filament 1.77.1 | (see text) | https://github.com/google/filament/tree/v1.77.1/third_party/draco | T1, T20 |
-| earcutr | 0.5.0 | ISC | https://github.com/frewsxcv/earcutr/ | T21 |
-| either | 1.19.0 | MIT OR Apache-2.0 | https://github.com/rayon-rs/either | T1, T22 |
-| Emscripten runtime (in filament.js) | 3.1.60 | MIT OR NCSA | https://github.com/emscripten-core/emscripten | T23 |
-| equivalent | 1.0.2 | Apache-2.0 OR MIT | https://github.com/indexmap-rs/equivalent | T1, T24 |
-| Filament | 1.77.1 (built from source with Tride's changes) | Apache-2.0 | https://github.com/google/filament/tree/v1.77.1 | T1, T25 |
-| flate2 | 1.1.9 | MIT OR Apache-2.0 | https://github.com/rust-lang/flate2-rs | T1, T26 |
-| foldhash | 0.2.0 | Zlib | https://github.com/orlp/foldhash | T27 |
-| font-types | 0.12.7 | MIT OR Apache-2.0 | https://github.com/googlefonts/fontations | T28, T29 |
-| gl-matrix (in Filament) | Filament 1.77.1 | (see text) | https://github.com/google/filament/tree/v1.77.1/third_party/gl-matrix | T30 |
-| gltf | 1.4.1 | MIT OR Apache-2.0 | https://github.com/gltf-rs/gltf | T1, T31 |
-| gltf-json | 1.4.1 | MIT OR Apache-2.0 | https://github.com/gltf-rs/gltf | T1, T31 |
-| harfrust | 0.14.0 | MIT | https://github.com/harfbuzz/harfrust | T32 |
-| hashbrown | 0.17.0 | MIT OR Apache-2.0 | https://github.com/rust-lang/hashbrown | T1, T33 |
-| HDRI environment maps (IBL presets) | Poly Haven | CC0-1.0 | https://polyhaven.com | T34 |
-| i_float | 5.0.0 | MIT | https://github.com/iShape-Rust/iFloat | T35 |
-| i_key_sort | 0.12.0 | MIT | https://github.com/iShape-Rust/iKeySort | T36 |
+| adler2 | 2.0.1 | 0BSD OR MIT OR Apache-2.0 | https://github.com/oyvindln/adler2 | T1, T2, T3 |
+| any_ascii | 0.3.3 | ISC | https://github.com/anyascii/anyascii | T4 |
+| base64 | 0.13.1 | MIT/Apache-2.0 | https://github.com/marshallpierce/rust-base64 | T1, T5 |
+| basisu (in Filament) | Filament 1.77.1 | (see text) | https://github.com/google/filament/tree/v1.77.1/third_party/basisu | T1, T6 |
+| bevy_mikktspace | 1.0.0 | Zlib AND (MIT OR Apache-2.0) | https://github.com/bevyengine/bevy_mikktspace | T1, T7 |
+| bitflags | 2.11.1 | MIT OR Apache-2.0 | https://github.com/bitflags/bitflags | T1, T8 |
+| bumpalo | 3.20.2 | MIT OR Apache-2.0 | https://github.com/fitzgen/bumpalo | T1, T9 |
+| bytemuck | 1.25.0 | Zlib OR Apache-2.0 OR MIT | https://github.com/Lokathor/bytemuck | T1, T10, T11 |
+| byteorder | 1.5.0 | Unlicense OR MIT | https://github.com/BurntSushi/byteorder | T12, T13, T14 |
+| cfg-if | 1.0.4 | MIT OR Apache-2.0 | https://github.com/rust-lang/cfg-if | T1, T15 |
+| cgltf (in Filament) | Filament 1.77.1 | (see text) | https://github.com/google/filament/tree/v1.77.1/third_party/cgltf | T16 |
+| crc32fast | 1.5.0 | MIT OR Apache-2.0 | https://github.com/srijs/rust-crc32fast | T1, T17 |
+| draco (in Filament) | Filament 1.77.1 | (see text) | https://github.com/google/filament/tree/v1.77.1/third_party/draco | T1, T18 |
+| earcutr | 0.5.0 | ISC | https://github.com/frewsxcv/earcutr/ | T19 |
+| either | 1.19.0 | MIT OR Apache-2.0 | https://github.com/rayon-rs/either | T1, T20 |
+| Emscripten runtime (in filament.js) | 3.1.60 | MIT OR NCSA | https://github.com/emscripten-core/emscripten | T21 |
+| equivalent | 1.0.2 | Apache-2.0 OR MIT | https://github.com/indexmap-rs/equivalent | T1, T22 |
+| Filament | 1.77.1 (built from source with Tride's changes) | Apache-2.0 | https://github.com/google/filament/tree/v1.77.1 | T1, T23 |
+| flate2 | 1.1.9 | MIT OR Apache-2.0 | https://github.com/rust-lang/flate2-rs | T1, T24 |
+| foldhash | 0.2.0 | Zlib | https://github.com/orlp/foldhash | T25 |
+| font-types | 0.12.7 | MIT OR Apache-2.0 | https://github.com/googlefonts/fontations | T26, T27 |
+| gl-matrix (in Filament) | Filament 1.77.1 | (see text) | https://github.com/google/filament/tree/v1.77.1/third_party/gl-matrix | T28 |
+| gltf | 1.4.1 | MIT OR Apache-2.0 | https://github.com/gltf-rs/gltf | T1, T29 |
+| gltf-json | 1.4.1 | MIT OR Apache-2.0 | https://github.com/gltf-rs/gltf | T1, T29 |
+| harfrust | 0.14.0 | MIT | https://github.com/harfbuzz/harfrust | T30 |
+| hashbrown | 0.17.0 | MIT OR Apache-2.0 | https://github.com/rust-lang/hashbrown | T1, T31 |
+| HDRI environment maps (IBL presets) | Poly Haven | CC0-1.0 | https://polyhaven.com | T32 |
+| i_float | 5.0.0 | MIT | https://github.com/iShape-Rust/iFloat | T33 |
+| i_key_sort | 0.12.0 | MIT | https://github.com/iShape-Rust/iKeySort | T34 |
 | i_overlay | 9.1.0 | MIT OR Apache-2.0 | https://github.com/iShape-Rust/iOverlay | T1 |
-| i_shape | 5.0.0 | MIT | https://github.com/iShape-Rust/i_shape | T35 |
-| i_tree | 0.20.0 | MIT | https://github.com/iShape-Rust/iTree | T37 |
-| indexmap | 2.14.0 | Apache-2.0 OR MIT | https://github.com/indexmap-rs/indexmap | T1, T38 |
-| iota-array | 1.0.0 | MIT | git://github.com/mikolalysenko/iota-array.git | T19 |
-| is-buffer | 1.1.6 | MIT | git://github.com/feross/is-buffer.git | T39 |
-| itertools | 0.14.0 | MIT OR Apache-2.0 | https://github.com/rust-itertools/itertools | T1, T22 |
-| itoa | 1.0.18 | MIT OR Apache-2.0 | https://github.com/dtolnay/itoa | T1, T4 |
-| ktx-parse | 1.1.0 | MIT | github:donmccurdy/ktx-parse | T40 |
-| lazy_static | 1.5.0 | MIT OR Apache-2.0 | https://github.com/rust-lang-nursery/lazy-static.rs | T1, T41 |
-| libm | 0.2.16 | MIT | https://github.com/rust-lang/compiler-builtins | T1, T42 |
-| log | 0.4.29 | MIT OR Apache-2.0 | https://github.com/rust-lang/log | T1, T9 |
-| memchr | 2.8.0 | Unlicense OR MIT | https://github.com/BurntSushi/memchr | T13, T14, T15 |
-| meshoptimizer (in Filament) | Filament 1.77.1 | (see text) | https://github.com/google/filament/tree/v1.77.1/third_party/meshoptimizer | T43 |
-| mikktspace (in Filament) | Filament 1.77.1 | (see text) | https://github.com/google/filament/tree/v1.77.1/third_party/mikktspace | T44 |
-| miniz_oxide | 0.8.9 | MIT OR Zlib OR Apache-2.0 | https://github.com/Frommi/miniz_oxide/tree/master/miniz_oxide | T1, T45, T46, T47 |
-| ndarray | 1.0.19 | MIT | git://github.com/mikolalysenko/ndarray.git | T48 |
-| ndarray-lanczos | 0.3.0 | MIT | github:donmccurdy/ndarray-lanczos | T49 |
-| ndarray-ops | 1.2.2 | MIT | git://github.com/mikolalysenko/ndarray-ops.git | T19 |
-| ndarray-pixels | 5.0.1 | MIT | github:donmccurdy/ndarray-pixels | T49 |
-| num-traits | 0.2.19 | MIT OR Apache-2.0 | https://github.com/rust-num/num-traits | T1, T9 |
-| once_cell | 1.21.4 | MIT OR Apache-2.0 | https://github.com/matklad/once_cell | T1, T4 |
-| property-graph | 4.1.0 | MIT | github:donmccurdy/property-graph | T49 |
-| read-fonts | 0.45.1 | MIT OR Apache-2.0 | https://github.com/googlefonts/fontations | T28, T29 |
-| robin-map (in Filament) | Filament 1.77.1 | (see text) | https://github.com/google/filament/tree/v1.77.1/third_party/robin-map | T50 |
-| serde | 1.0.228 | MIT OR Apache-2.0 | https://github.com/serde-rs/serde | T1, T4 |
-| serde_core | 1.0.228 | MIT OR Apache-2.0 | https://github.com/serde-rs/serde | T1, T4 |
-| serde_json | 1.0.149 | MIT OR Apache-2.0 | https://github.com/serde-rs/json | T1, T4 |
-| simd-adler32 | 0.3.9 | MIT | https://github.com/mcountryman/simd-adler32 | T51 |
-| skrifa | 0.48.0 | MIT OR Apache-2.0 | https://github.com/googlefonts/fontations | T28, T29 |
-| smallvec | 1.15.1 | MIT OR Apache-2.0 | https://github.com/servo/rust-smallvec | T1, T52 |
-| smol-v (in Filament) | Filament 1.77.1 | (see text) | https://github.com/google/filament/tree/v1.77.1/third_party/smol-v | T53 |
-| stable_deref_trait | 1.2.1 | MIT OR Apache-2.0 | https://github.com/storyyeller/stable_deref_trait | T1, T54 |
-| stb (in Filament) | Filament 1.77.1 | (see text) | https://github.com/google/filament/tree/v1.77.1/third_party/stb | T55 |
-| thiserror | 2.0.18 | MIT OR Apache-2.0 | https://github.com/dtolnay/thiserror | T1, T4 |
-| typed-path | 0.12.3 | MIT OR Apache-2.0 | https://github.com/chipsenkbeil/typed-path | T1, T4 |
-| unicode-bidi | 0.3.18 | MIT OR Apache-2.0 | https://github.com/servo/unicode-bidi | T1, T56, T57 |
-| unicode-ident | 1.0.24 | (MIT OR Apache-2.0) AND Unicode-3.0 | https://github.com/dtolnay/unicode-ident | T1, T4, T58 |
-| uniq | 1.0.1 | MIT | git://github.com/mikolalysenko/uniq.git | T19 |
-| uuid | 1.23.1 | Apache-2.0 OR MIT | https://github.com/uuid-rs/uuid | T1, T59 |
-| wasm-bindgen | 0.2.118 | MIT OR Apache-2.0 | https://github.com/wasm-bindgen/wasm-bindgen | T1, T16 |
-| wasm-bindgen-shared | 0.2.118 | MIT OR Apache-2.0 | https://github.com/wasm-bindgen/wasm-bindgen/tree/master/crates/shared | T1, T16 |
-| yoke | 0.8.3 | Unicode-3.0 | https://github.com/unicode-org/icu4x | T60 |
-| zerofrom | 0.1.7 | Unicode-3.0 | https://github.com/unicode-org/icu4x | T60 |
-| zip | 8.5.1 | MIT | https://github.com/zip-rs/zip2 | T61 |
-| zlib-rs | 0.6.3 | Zlib | https://github.com/trifectatechfoundation/zlib-rs | T62 |
-| zmij | 1.0.21 | MIT | https://github.com/dtolnay/zmij | T4 |
-| zopfli | 0.8.3 | Apache-2.0 | https://github.com/zopfli-rs/zopfli | T1, T63 |
-| zstd (in Filament) | Filament 1.77.1 | (see text) | https://github.com/google/filament/tree/v1.77.1/third_party/zstd | T64 |
+| i_shape | 5.0.0 | MIT | https://github.com/iShape-Rust/i_shape | T33 |
+| i_tree | 0.20.0 | MIT | https://github.com/iShape-Rust/iTree | T35 |
+| indexmap | 2.14.0 | Apache-2.0 OR MIT | https://github.com/indexmap-rs/indexmap | T1, T36 |
+| itertools | 0.14.0 | MIT OR Apache-2.0 | https://github.com/rust-itertools/itertools | T1, T20 |
+| itoa | 1.0.18 | MIT OR Apache-2.0 | https://github.com/dtolnay/itoa | T1, T3 |
+| lazy_static | 1.5.0 | MIT OR Apache-2.0 | https://github.com/rust-lang-nursery/lazy-static.rs | T1, T37 |
+| libm | 0.2.16 | MIT | https://github.com/rust-lang/compiler-builtins | T1, T38 |
+| log | 0.4.29 | MIT OR Apache-2.0 | https://github.com/rust-lang/log | T1, T8 |
+| memchr | 2.8.0 | Unlicense OR MIT | https://github.com/BurntSushi/memchr | T12, T13, T14 |
+| meshoptimizer (in Filament) | Filament 1.77.1 | (see text) | https://github.com/google/filament/tree/v1.77.1/third_party/meshoptimizer | T39 |
+| mikktspace (in Filament) | Filament 1.77.1 | (see text) | https://github.com/google/filament/tree/v1.77.1/third_party/mikktspace | T40 |
+| miniz_oxide | 0.8.9 | MIT OR Zlib OR Apache-2.0 | https://github.com/Frommi/miniz_oxide/tree/master/miniz_oxide | T1, T41, T42, T43 |
+| num-traits | 0.2.19 | MIT OR Apache-2.0 | https://github.com/rust-num/num-traits | T1, T8 |
+| once_cell | 1.21.4 | MIT OR Apache-2.0 | https://github.com/matklad/once_cell | T1, T3 |
+| read-fonts | 0.45.1 | MIT OR Apache-2.0 | https://github.com/googlefonts/fontations | T26, T27 |
+| robin-map (in Filament) | Filament 1.77.1 | (see text) | https://github.com/google/filament/tree/v1.77.1/third_party/robin-map | T44 |
+| serde | 1.0.228 | MIT OR Apache-2.0 | https://github.com/serde-rs/serde | T1, T3 |
+| serde_core | 1.0.228 | MIT OR Apache-2.0 | https://github.com/serde-rs/serde | T1, T3 |
+| serde_json | 1.0.149 | MIT OR Apache-2.0 | https://github.com/serde-rs/json | T1, T3 |
+| simd-adler32 | 0.3.9 | MIT | https://github.com/mcountryman/simd-adler32 | T45 |
+| skrifa | 0.48.0 | MIT OR Apache-2.0 | https://github.com/googlefonts/fontations | T26, T27 |
+| smallvec | 1.15.1 | MIT OR Apache-2.0 | https://github.com/servo/rust-smallvec | T1, T46 |
+| smol-v (in Filament) | Filament 1.77.1 | (see text) | https://github.com/google/filament/tree/v1.77.1/third_party/smol-v | T47 |
+| stable_deref_trait | 1.2.1 | MIT OR Apache-2.0 | https://github.com/storyyeller/stable_deref_trait | T1, T48 |
+| stb (in Filament) | Filament 1.77.1 | (see text) | https://github.com/google/filament/tree/v1.77.1/third_party/stb | T49 |
+| thiserror | 2.0.18 | MIT OR Apache-2.0 | https://github.com/dtolnay/thiserror | T1, T3 |
+| typed-path | 0.12.3 | MIT OR Apache-2.0 | https://github.com/chipsenkbeil/typed-path | T1, T3 |
+| unicode-bidi | 0.3.18 | MIT OR Apache-2.0 | https://github.com/servo/unicode-bidi | T1, T50, T51 |
+| unicode-ident | 1.0.24 | (MIT OR Apache-2.0) AND Unicode-3.0 | https://github.com/dtolnay/unicode-ident | T1, T3, T52 |
+| uuid | 1.23.1 | Apache-2.0 OR MIT | https://github.com/uuid-rs/uuid | T1, T53 |
+| wasm-bindgen | 0.2.118 | MIT OR Apache-2.0 | https://github.com/wasm-bindgen/wasm-bindgen | T1, T15 |
+| wasm-bindgen-shared | 0.2.118 | MIT OR Apache-2.0 | https://github.com/wasm-bindgen/wasm-bindgen/tree/master/crates/shared | T1, T15 |
+| yoke | 0.8.3 | Unicode-3.0 | https://github.com/unicode-org/icu4x | T54 |
+| zerofrom | 0.1.7 | Unicode-3.0 | https://github.com/unicode-org/icu4x | T54 |
+| zip | 8.5.1 | MIT | https://github.com/zip-rs/zip2 | T55 |
+| zlib-rs | 0.6.3 | Zlib | https://github.com/trifectatechfoundation/zlib-rs | T56 |
+| zmij | 1.0.21 | MIT | https://github.com/dtolnay/zmij | T3 |
+| zopfli | 0.8.3 | Apache-2.0 | https://github.com/zopfli-rs/zopfli | T1, T57 |
+| zstd (in Filament) | Filament 1.77.1 | (see text) | https://github.com/google/filament/tree/v1.77.1/third_party/zstd | T58 |
 
 ## Licence texts
 
@@ -277,35 +264,7 @@ TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
 END OF TERMS AND CONDITIONS
 ````
 
-### T2. LICENSE.md
-
-Applies to: @gltf-transform/core 4.3.0, @gltf-transform/extensions 4.3.0, @gltf-transform/functions 4.3.0.
-
-````text
-The MIT License (MIT)
-
-Copyright (c) 2024 Don McCurdy
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-````
-
-### T3. LICENSE-0BSD
+### T2. LICENSE-0BSD
 
 Applies to: adler2 2.0.1.
 
@@ -324,7 +283,7 @@ AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
 OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ````
 
-### T4. LICENSE-MIT
+### T3. LICENSE-MIT
 
 Applies to: adler2 2.0.1, itoa 1.0.18, once_cell 1.21.4, serde 1.0.228, serde_core 1.0.228, serde_json 1.0.149, thiserror 2.0.18, typed-path 0.12.3, unicode-ident 1.0.24, zmij 1.0.21.
 
@@ -354,7 +313,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ````
 
-### T5. LICENSE
+### T4. LICENSE
 
 Applies to: any_ascii 0.3.3.
 
@@ -376,7 +335,7 @@ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ````
 
-### T6. LICENSE-MIT
+### T5. LICENSE-MIT
 
 Applies to: base64 0.13.1.
 
@@ -404,7 +363,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ````
 
-### T7. LICENSE (beside the Apache License 2.0)
+### T6. LICENSE (beside the Apache License 2.0)
 
 Applies to: basisu (in Filament) Filament 1.77.1.
 
@@ -412,7 +371,7 @@ Applies to: basisu (in Filament) Filament 1.77.1.
 Copyright 2019-2026 Binomial LLC
 ````
 
-### T8. LICENSE-MIT
+### T7. LICENSE-MIT
 
 Applies to: bevy_mikktspace 1.0.0.
 
@@ -444,7 +403,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ````
 
-### T9. LICENSE-MIT
+### T8. LICENSE-MIT
 
 Applies to: bitflags 2.11.1, log 0.4.29, num-traits 0.2.19.
 
@@ -476,7 +435,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ````
 
-### T10. LICENSE-MIT
+### T9. LICENSE-MIT
 
 Applies to: bumpalo 3.20.2.
 
@@ -508,7 +467,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ````
 
-### T11. LICENSE-MIT
+### T10. LICENSE-MIT
 
 Applies to: bytemuck 1.25.0.
 
@@ -524,7 +483,7 @@ The above copyright notice and this permission notice (including the next paragr
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ````
 
-### T12. LICENSE-ZLIB
+### T11. LICENSE-ZLIB
 
 Applies to: bytemuck 1.25.0.
 
@@ -542,7 +501,7 @@ Permission is granted to anyone to use this software for any purpose, including 
 3. This notice may not be removed or altered from any source distribution.
 ````
 
-### T13. COPYING
+### T12. COPYING
 
 Applies to: byteorder 1.5.0, memchr 2.8.0.
 
@@ -552,7 +511,7 @@ This project is dual-licensed under the Unlicense and MIT licenses.
 You may use this code under the terms of either license.
 ````
 
-### T14. LICENSE-MIT
+### T13. LICENSE-MIT
 
 Applies to: byteorder 1.5.0, memchr 2.8.0.
 
@@ -580,7 +539,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ````
 
-### T15. UNLICENSE
+### T14. UNLICENSE
 
 Applies to: byteorder 1.5.0, memchr 2.8.0.
 
@@ -611,7 +570,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 For more information, please refer to <http://unlicense.org/>
 ````
 
-### T16. LICENSE-MIT
+### T15. LICENSE-MIT
 
 Applies to: cfg-if 1.0.4, wasm-bindgen 0.2.118, wasm-bindgen-shared 0.2.118.
 
@@ -643,7 +602,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ````
 
-### T17. LICENSE
+### T16. LICENSE
 
 Applies to: cgltf (in Filament) Filament 1.77.1.
 
@@ -657,7 +616,7 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ````
 
-### T18. LICENSE-MIT
+### T17. LICENSE-MIT
 
 Applies to: crc32fast 1.5.0.
 
@@ -685,35 +644,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ````
 
-### T19. LICENSE
-
-Applies to: cwise-compiler 1.1.3, iota-array 1.0.0, ndarray-ops 1.2.2, uniq 1.0.1.
-
-````text
-The MIT License (MIT)
-
-Copyright (c) 2013 Mikola Lysenko
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-````
-
-### T20. LICENSE (beside the Apache License 2.0)
+### T18. LICENSE (beside the Apache License 2.0)
 
 Applies to: draco (in Filament) Filament 1.77.1.
 
@@ -770,7 +701,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 For more information, please refer to <http://unlicense.org>
 ````
 
-### T21. LICENSE
+### T19. LICENSE
 
 Applies to: earcutr 0.5.0.
 
@@ -793,7 +724,7 @@ TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
 THIS SOFTWARE.
 ````
 
-### T22. LICENSE-MIT
+### T20. LICENSE-MIT
 
 Applies to: either 1.19.0, itertools 0.14.0.
 
@@ -825,7 +756,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ````
 
-### T23. LICENSE
+### T21. LICENSE
 
 Applies to: Emscripten runtime (in filament.js) 3.1.60.
 
@@ -933,7 +864,7 @@ used by default, but certain options use it (e.g., the optional closure compiler
 flag will run closure compiler from third_party/).
 ````
 
-### T24. LICENSE-MIT
+### T22. LICENSE-MIT
 
 Applies to: equivalent 1.0.2.
 
@@ -965,7 +896,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ````
 
-### T25. LICENSE (beside the Apache License 2.0)
+### T23. LICENSE (beside the Apache License 2.0)
 
 Applies to: Filament 1.77.1 (built from source with Tride's changes).
 
@@ -973,7 +904,7 @@ Applies to: Filament 1.77.1 (built from source with Tride's changes).
 Copyright 2023 The Android Open Source Project
 ````
 
-### T26. LICENSE-MIT
+### T24. LICENSE-MIT
 
 Applies to: flate2 1.1.9.
 
@@ -1005,7 +936,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ````
 
-### T27. LICENSE
+### T25. LICENSE
 
 Applies to: foldhash 0.2.0.
 
@@ -1031,7 +962,7 @@ the following restrictions:
 3. This notice may not be removed or altered from any source distribution.
 ````
 
-### T28. LICENSE-APACHE
+### T26. LICENSE-APACHE
 
 Applies to: font-types 0.12.7, read-fonts 0.45.1, skrifa 0.48.0.
 
@@ -1105,7 +1036,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ````
 
-### T29. LICENSE-MIT
+### T27. LICENSE-MIT
 
 Applies to: font-types 0.12.7, read-fonts 0.45.1, skrifa 0.48.0.
 
@@ -1137,7 +1068,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ````
 
-### T30. LICENSE.md
+### T28. LICENSE.md
 
 Applies to: gl-matrix (in Filament) Filament 1.77.1.
 
@@ -1163,7 +1094,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ````
 
-### T31. LICENSE-MIT
+### T29. LICENSE-MIT
 
 Applies to: gltf 1.4.1, gltf-json 1.4.1.
 
@@ -1195,7 +1126,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ````
 
-### T32. LICENSE
+### T30. LICENSE
 
 Applies to: harfrust 0.14.0.
 
@@ -1224,7 +1155,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ````
 
-### T33. LICENSE-MIT
+### T31. LICENSE-MIT
 
 Applies to: hashbrown 0.17.0.
 
@@ -1256,7 +1187,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ````
 
-### T34. LICENSES.md
+### T32. LICENSES.md
 
 Applies to: HDRI environment maps (IBL presets) Poly Haven.
 
@@ -1316,7 +1247,7 @@ client-side via `filament-iblprefilter`) are
 end-user-licensed and never enter this directory.
 ````
 
-### T35. LICENSE
+### T33. LICENSE
 
 Applies to: i_float 5.0.0, i_shape 5.0.0.
 
@@ -1344,7 +1275,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ````
 
-### T36. MIT (standard text; the package ships none)
+### T34. MIT (standard text; the package ships none)
 
 Applies to: i_key_sort 0.12.0.
 
@@ -1376,7 +1307,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ````
 
-### T37. LICENSE
+### T35. LICENSE
 
 Applies to: i_tree 0.20.0.
 
@@ -1404,7 +1335,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ````
 
-### T38. LICENSE-MIT
+### T36. LICENSE-MIT
 
 Applies to: indexmap 2.14.0.
 
@@ -1436,63 +1367,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ````
 
-### T39. LICENSE
-
-Applies to: is-buffer 1.1.6.
-
-````text
-The MIT License (MIT)
-
-Copyright (c) Feross Aboukhadijeh
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-````
-
-### T40. LICENSE
-
-Applies to: ktx-parse 1.1.0.
-
-````text
-The MIT License (MIT)
-
-Copyright (c) 2020 Don McCurdy
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-````
-
-### T41. LICENSE-MIT
+### T37. LICENSE-MIT
 
 Applies to: lazy_static 1.5.0.
 
@@ -1524,7 +1399,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ````
 
-### T42. LICENSE.txt (beside the Apache License 2.0)
+### T38. LICENSE.txt (beside the Apache License 2.0)
 
 Applies to: libm 0.2.16.
 
@@ -1591,7 +1466,7 @@ have been licensed under extremely permissive terms.
 Copyright notices are retained in src/* files where relevant.
 ````
 
-### T43. LICENSE
+### T39. LICENSE
 
 Applies to: meshoptimizer (in Filament) Filament 1.77.1.
 
@@ -1619,7 +1494,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ````
 
-### T44. mikktspace.h
+### T40. mikktspace.h
 
 Applies to: mikktspace (in Filament) Filament 1.77.1.
 
@@ -1629,7 +1504,7 @@ Applies to: mikktspace (in Filament) Filament 1.77.1.
  */
 ````
 
-### T45. LICENSE
+### T41. LICENSE
 
 Applies to: miniz_oxide 0.8.9.
 
@@ -1661,7 +1536,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ````
 
-### T46. LICENSE-MIT.md
+### T42. LICENSE-MIT.md
 
 Applies to: miniz_oxide 0.8.9.
 
@@ -1692,7 +1567,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ````
 
-### T47. LICENSE-ZLIB.md
+### T43. LICENSE-ZLIB.md
 
 Applies to: miniz_oxide 0.8.9.
 
@@ -1713,63 +1588,7 @@ Permission is granted to anyone to use this software for any purpose, including 
 3. This notice may not be removed or altered from any source distribution.
 ````
 
-### T48. LICENSE
-
-Applies to: ndarray 1.0.19.
-
-````text
-The MIT License (MIT)
-
-Copyright (c) 2013-2016 Mikola Lysenko
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-````
-
-### T49. LICENSE
-
-Applies to: ndarray-lanczos 0.3.0, ndarray-pixels 5.0.1, property-graph 4.1.0.
-
-````text
-The MIT License (MIT)
-
-Copyright (c) 2021 Don McCurdy
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-````
-
-### T50. LICENSE
+### T44. LICENSE
 
 Applies to: robin-map (in Filament) Filament 1.77.1.
 
@@ -1797,7 +1616,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ````
 
-### T51. LICENSE.md
+### T45. LICENSE.md
 
 Applies to: simd-adler32 0.3.9.
 
@@ -1825,7 +1644,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ````
 
-### T52. LICENSE-MIT
+### T46. LICENSE-MIT
 
 Applies to: smallvec 1.15.1.
 
@@ -1857,7 +1676,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ````
 
-### T53. LICENSE
+### T47. LICENSE
 
 Applies to: smol-v (in Filament) Filament 1.77.1.
 
@@ -1903,7 +1722,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ------------------------------------------------------------------------------
 ````
 
-### T54. LICENSE-MIT
+### T48. LICENSE-MIT
 
 Applies to: stable_deref_trait 1.2.1.
 
@@ -1935,7 +1754,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ````
 
-### T55. LICENSE
+### T49. LICENSE
 
 Applies to: stb (in Filament) Filament 1.77.1.
 
@@ -1945,7 +1764,7 @@ recognized, you are granted a perpetual, irrevocable license to copy,
 distribute, and modify this file as you see fit.
 ````
 
-### T56. COPYRIGHT
+### T50. COPYRIGHT
 
 Applies to: unicode-bidi 0.3.18.
 
@@ -1960,7 +1779,7 @@ carrying such notice may not be copied, modified, or distributed except
 according to those terms.
 ````
 
-### T57. LICENSE-MIT
+### T51. LICENSE-MIT
 
 Applies to: unicode-bidi 0.3.18.
 
@@ -1992,7 +1811,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ````
 
-### T58. LICENSE-UNICODE
+### T52. LICENSE-UNICODE
 
 Applies to: unicode-ident 1.0.24.
 
@@ -2038,7 +1857,7 @@ dealings in these Data Files or Software without prior written
 authorization of the copyright holder.
 ````
 
-### T59. LICENSE-MIT
+### T53. LICENSE-MIT
 
 Applies to: uuid 1.23.1.
 
@@ -2071,7 +1890,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ````
 
-### T60. LICENSE
+### T54. LICENSE
 
 Applies to: yoke 0.8.3, zerofrom 0.1.7.
 
@@ -2124,7 +1943,7 @@ Portions of ICU4X may have been adapted from ICU4C and/or ICU4J.
 ICU 1.8.1 to ICU 57.1 © 1995-2016 International Business Machines Corporation and others.
 ````
 
-### T61. LICENSE
+### T55. LICENSE
 
 Applies to: zip 8.5.1.
 
@@ -2152,7 +1971,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ````
 
-### T62. LICENSE
+### T56. LICENSE
 
 Applies to: zlib-rs 0.6.3.
 
@@ -2178,7 +1997,7 @@ freely, subject to the following restrictions:
 3. This notice may not be removed or altered from any source distribution.
 ````
 
-### T63. COPYING (beside the Apache License 2.0)
+### T57. COPYING (beside the Apache License 2.0)
 
 Applies to: zopfli 0.8.3.
 
@@ -2186,7 +2005,7 @@ Applies to: zopfli 0.8.3.
 Copyright 2011 Google Inc.
 ````
 
-### T64. LICENSE
+### T58. LICENSE
 
 Applies to: zstd (in Filament) Filament 1.77.1.
 

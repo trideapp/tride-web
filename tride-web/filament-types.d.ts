@@ -292,6 +292,8 @@ export class TextureSampler {
     constructor(minfilter: MinFilter, magfilter: MagFilter, wrapmode: WrapMode);
     public setAnisotropy(value: number): void;
     public setCompareMode(mode: CompareMode, func: CompareFunc): void;
+    public setWrapModeS(mode: WrapMode): void;
+    public setWrapModeT(mode: WrapMode): void;
 }
 
 export class MaterialInstance {
@@ -827,6 +829,15 @@ export class DecodedImage {
     public data: any;
 }
 
+/**
+ * Tride: stb's decode of a PNG / JPEG (`Buffer` of the file's bytes) into `ncomp` channels, as
+ * gltfio's StbProvider reads pictures; an image stb cannot read comes back 0 x 0.
+ */
+export function decodeImage(encoded: driver$BufferDescriptor, ncomp: number): DecodedImage;
+
+/** Tride: wraps a typed array's bytes as the BufferDescriptor Filament calls take (a copy). */
+export function Buffer(typedarray: ArrayBufferView): driver$BufferDescriptor;
+
 export class Engine {
     public static readonly SINGLE_THREADED: number;
     public static create(canvas: HTMLCanvasElement, options?: { backend?: Backend }): Engine;
@@ -845,7 +856,6 @@ export class Engine {
     public createIblFromKtx1(urlOrBuffer: BufferReference): IndirectLight;
     public createSkyFromKtx1(urlOrBuffer: BufferReference): Skybox;
     public createTextureFromKtx1(urlOrBuffer: BufferReference, options?: object): Texture;
-    public createTextureFromKtx2(urlOrBuffer: BufferReference, options?: object): Texture;
 
     public createView(): View;
 
@@ -907,13 +917,6 @@ export class Engine {
     public isValidTexture(texture: Texture): boolean;
     public isValidVertexBuffer(vertexBuffer: VertexBuffer): boolean;
     public isValidView(view: View): boolean;
-}
-
-export class Ktx2Reader {
-    constructor(engine: Engine, quiet: boolean)
-    public requestFormat(format: Texture$InternalFormat): void;
-    public unrequestFormat(format: Texture$InternalFormat): void;
-    public load(urlOrBuffer: BufferReference, transfer: TransferFunction): Texture|null;
 }
 
 // [mipLevel, arrayIndex, cubeFace] index into a KTX1 bundle's blobs.
@@ -1015,13 +1018,13 @@ export class gltfio$Animator {
 export class gltfio$UbershaderProvider {
     constructor(engine: Engine);
     public destroyMaterials(): void;
+    /** Tride: a glTF material instance without the AssetLoader (MaterialKey field names). */
+    public createMaterialInstance(key: Partial<Record<string, boolean | number>>, uvmap: number[] | undefined, label: string): MaterialInstance;
+    /** Tride: UV0, UV1, COLOR are read by every ubershader — fill absent ones with a dummy. */
+    public needsDummyData(attrib: VertexAttribute): boolean;
 }
 
 export class gltfio$StbProvider {
-    constructor(engine: Engine);
-}
-
-export class gltfio$Ktx2Provider {
     constructor(engine: Engine);
 }
 
@@ -1034,7 +1037,6 @@ export class gltfio$ResourceLoader {
     constructor(engine: Engine, normalizeSkinningWeights: boolean);
     public addResourceData(url: string, buffer: driver$BufferDescriptor): void;
     public addStbProvider(mimeType: string, provider: gltfio$StbProvider): void;
-    public addKtx2Provider(mimeType: string, provider: gltfio$Ktx2Provider): void;
     public addWebpProvider(mimeType: string, provider: gltfio$WebpProvider): void;
     public hasResourceData(url: string): boolean;
     public loadResources(asset: gltfio$FilamentAsset): boolean;
@@ -1406,6 +1408,10 @@ export const enum TextureUsage {
     UPLOADABLE = 8,
     SAMPLEABLE = 16,
     SUBPASS_INPUT = 32,
+    BLIT_SRC = 64,
+    BLIT_DST = 128,
+    PROTECTED = 256,
+    GEN_MIPMAPPABLE = 512,
     DEFAULT = UPLOADABLE | SAMPLEABLE,
 }
 
@@ -1488,19 +1494,6 @@ export enum WrapMode {
     CLAMP_TO_EDGE,
     REPEAT,
     MIRRORED_REPEAT,
-}
-
-export enum Ktx2Reader$TransferFunction {
-    LINEAR,
-    sRGB,
-}
-
-export enum Ktx2Reader$Result {
-    SUCCESS,
-    COMPRESSED_TRANSCODE_FAILURE,
-    UNCOMPRESSED_TRANSCODE_FAILURE,
-    FORMAT_UNSUPPORTED,
-    FORMAT_ALREADY_REQUESTED,
 }
 
 export function _malloc(size: number): number;

@@ -1,4 +1,4 @@
-# Tride Web — Tride 0.13.0
+# Tride Web — Tride 0.14.0
 
 Plays Tride scenes (`.trd`) in a web page: `<tride-scene>` is one HTML tag on top of the Tride runtime
 (WASM) and the Filament renderer (WebGL2) — the same player that draws the Tride Editor viewport. A scene
@@ -15,7 +15,7 @@ what changed — `CHANGELOG.md`.
 
 | | |
 |---|---|
-| GitHub Packages | The npm package `@trideapp/web` 0.13.0: the module, the runtime's WASM (full and lite), Filament, the environments |
+| GitHub Packages | The npm package `@trideapp/web` 0.14.0: the module, the runtime's WASM (full and lite), Filament, the environments |
 | Releases | The same package as a `.tgz` file — to install without a token |
 | `index.html`, `embed.html` | A ready static site — the pages below |
 | `tride-web/`, `filament/`, `ibl/` | The library for the site: the module with the runtime's two WASM files, Filament, the built-in environments |
@@ -48,10 +48,10 @@ the project's `.npmrc`:
 ```
 
 ```bash
-npm install @trideapp/web@0.13.0
+npm install @trideapp/web@0.14.0
 ```
 
-Without a token — `trideapp-web-0.13.0.tgz` from Releases: `npm install ./trideapp-web-0.13.0.tgz`.
+Without a token — `trideapp-web-0.14.0.tgz` from Releases: `npm install ./trideapp-web-0.14.0.tgz`.
 
 Serve `filament/` and `ibl/` from the package (`node_modules/@trideapp/web/`) as static files of the
 site and import the module:

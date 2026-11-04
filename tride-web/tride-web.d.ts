@@ -4,8 +4,6 @@ export declare type AdvanceOutcome = ReturnType<ScenePlayer['advance']>;
 
 declare type AntiAliasingMethod = 'NONE' | 'FXAA';
 
-declare type AssetLoader = FilamentNs.gltfio$AssetLoader;
-
 
 
 declare type AudioInputKind = 'track' | 'stream';
@@ -113,6 +111,17 @@ declare interface BloomOptions {
     lensFlare?: boolean;
 }
 
+declare interface BonePaletteCheck {
+    /** Palettes measured. */
+    readonly palettes: number;
+    /** Bones measured. */
+    readonly bones: number;
+    /** The largest difference relative to the largest element of the bone's factors. */
+    readonly worst: number;
+    /** Palettes the host could not place (a row without an entity, a joint the skin lacks). */
+    readonly unplaced: number;
+}
+
 /** One binding the page made: the input, its source and the range it maps. */
 export declare type BoundInput = ReturnType<ScenePlayer['boundInputs']>[number];
 
@@ -126,22 +135,11 @@ declare interface BoundInput_2 {
 
 declare type Camera = FilamentNs.Camera;
 
-/**
- * `CameraLike` — the slice of a Filament camera the player writes: look-at and projection.
- *
- * @module @tride/player/engine/camera-like
- * @owner editor
- *
- * Public API:
- *   - `CameraLike` — implemented by Filament's `Camera` and by tiny test stubs.
- *
- * Non-obvious constraints:
- *   - `setProjection` takes `Camera$Projection` as a raw number (`PERSPECTIVE=0`, `ORTHO=1`) so
- *     callers need not import the Filament runtime namespace.
- *
- * Cross-refs:
- *   - Companion: `filament-engine.ts`; the editor's `OrbitControls.applyTo` writes through it.
- */
+/** A member of Filament's `Camera$Fov` (`VERTICAL`, `HORIZONTAL`) as embind hands it out. */
+declare interface CameraFovMember {
+    readonly value: number;
+}
+
 /**
  * Optional writable Filament-compatible camera surface used by
  * {@link OrbitControls.applyTo}. Only the subset of methods we actually
@@ -149,17 +147,25 @@ declare type Camera = FilamentNs.Camera;
  */
 declare interface CameraLike {
     lookAt(eye: readonly [number, number, number], center: readonly [number, number, number], up: readonly [number, number, number]): void;
-    setProjectionFov(fovDegrees: number, aspect: number, near: number, far: number, fov: number): void;
-    /**
-     * Explicit-frustum projection (Filament `Camera.setProjection`). `projection`
-     * is `Camera$Projection` (`PERSPECTIVE=0`, `ORTHO=1`) passed as a raw number to
-     * avoid importing the whole runtime namespace (mirrors {@link setProjectionFov}).
-     */
-    setProjection(projection: number, left: number, right: number, bottom: number, top: number, near: number, far: number): void;
+    setProjectionFov(fovDegrees: number, aspect: number, near: number, far: number, fov: CameraFovMember): void;
+    /** Explicit-frustum projection (Filament `Camera.setProjection`). */
+    setProjection(projection: CameraProjectionMember, left: number, right: number, bottom: number, top: number, near: number, far: number): void;
 
     setFocusDistance?(distance: number): void;
 
     setExposure?(aperture: number, shutterSpeed: number, sensitivity: number): void;
+}
+
+/** A member of Filament's `Camera$Projection` (`PERSPECTIVE`, `ORTHO`) as embind hands it out. */
+declare interface CameraProjectionMember {
+    readonly value: number;
+}
+
+/** A picture as stb gives it: RGBA8, rows top to bottom. */
+declare interface DecodedPicture {
+    readonly width: number;
+    readonly height: number;
+    readonly pixels: Uint8Array;
 }
 
 
@@ -223,28 +229,6 @@ declare type Entity_2 = FilamentNs.Entity;
 
 declare type Entity_3 = FilamentNs.Entity;
 
-declare type Entity_4 = FilamentNs.Entity;
-
-
-declare interface EntityNameMap {
-    /** Look up the (single) entity by glTF node name. Mandate 3. */
-    readonly byName: ReadonlyMap<string, Entity>;
-
-    readonly allByName: ReadonlyMap<string, readonly Entity[]>;
-    /**
-     * Sparse `Entity` array indexed by glTF node integer index. Holes
-     * (`null`) for indices that the joint loop did not cover and that
-     * also lack a unique `nodes[i].name` byName-backfill match. Length
-     * matches the glTF document's `nodes[]` count (or `0` when no glTF
-     * JSON could be parsed from the load buffer).
-     */
-    readonly entityByGltfIndex: ReadonlyArray<Entity | null>;
-    /** All entities from the loaded main asset (DFS pre-order + std::partition; renderables first — NOT glTF nodes[] order). */
-    readonly allEntities: readonly Entity[];
-    /** Root entity of the loaded main asset. */
-    readonly root: Entity | null;
-}
-
 
 declare interface EnvBlobResolver {
     /** Retained KTX blob pair for `uid`, or `undefined` when none is registered. */
@@ -276,55 +260,28 @@ declare interface FilamentEngineHandle {
     readonly renderer: Renderer;
     readonly camera: Camera & CameraLike;
     readonly swapChain: SwapChain;
-    /** gltfio asset loader — shared by AssetRegistry for createInstance. */
-    readonly loader: AssetLoader;
-    /** The most-recently-loaded main asset (null before first loadAsset). */
-    readonly mainAsset: FilamentAsset | null;
+    /** gltfio asset loader of the editor decorations (`gltfio-loader.ts`). */
+    readonly loader: GltfioLoader;
 
     paletteInstancesFor?(slug: string): PaletteInstances | null;
 
     holdPaletteWrites?(slug: string, held: HeldPaletteWrites): void;
 
+    rekeyMaterial?(slug: string, key: unknown): MaterialRekey;
+
     setSize(widthPx: number, heightPx: number, pixelsPerPoint?: number): void;
-    /**
-     * Load a glTF / GLB and add its renderables to the scene. Returns
-     * the Filament asset so the caller can transform / remove / inspect
-     * it. Resources (textures, buffers) load **incrementally** — work
-     * is spread across frames with a 16 ms budget per frame so the
-     * main thread stays responsive. The returned promise resolves once
-     * all resources are ready (after potentially many frames).
-     *
-     * **Prerequisite:** the render loop must call {@link render} every
-     * frame, which in turn calls `engine.execute()` to pump the
-     * incremental loader.
-     *
-     * @param opts.asMain  When `true` (default), this asset becomes the
-     *   one returned by name lookups (`buildEntityMap`). Set `false` for
-     *   editor helpers (axes, grid, gizmos) so they don't shadow the
-     *   user's scene asset. The latest asset loaded with `asMain: true`
-     *   wins — this lets the viewport reload scenes safely.
-     */
+
     loadAsset(buffer: Uint8Array, basePath?: string | null, opts?: {
-        asMain?: boolean;
         overlay?: boolean;
         decoration?: DecorationKind;
     }): Promise<FilamentAsset>;
 
     readonly overlayActive: boolean;
 
-    buildEntityMap(_gltfNodeNames?: readonly string[]): EntityNameMap;
+    prepareScene(materials?: SceneMaterialSource | null): Promise<PreparedScene>;
     /**
-     * Re-build the entity map without re-loading the asset. Used as a
-     * fallback when the initial map ended up empty (e.g. StrictMode race).
-     */
-    refreshEntityMap(_gltfNodeNames?: readonly string[]): EntityNameMap;
-
-    removeMainAsset(): void;
-
-    prepareScene(buffer: Uint8Array | null, basePath?: string | null): Promise<PreparedScene>;
-    /**
-     * From now on every scene call (`buildEntityMap`, generated meshes, clone batches, palette and
-     * material writes, a parent-less attach) lands on `prepared`; the shown scene draws as it was.
+     * From now on every scene call (node entities, generated meshes, clone batches, palette and
+     * material writes) lands on `prepared`; the shown scene draws as it was.
      */
     addressScene(prepared: PreparedScene): void;
     /**
@@ -335,26 +292,30 @@ declare interface FilamentEngineHandle {
     /** Drop `prepared` unseen (a cancelled reload). */
     discardScene(prepared: PreparedScene): void;
     /** Remove entity/entities from the scene (hide a node). */
-    hideEntity(entities: readonly Entity_2[]): void;
+    hideEntity(entities: readonly Entity[]): void;
     /** Add previously-removed entity/entities back to the scene (show a node). */
-    showEntity(entities: readonly Entity_2[]): void;
+    showEntity(entities: readonly Entity[]): void;
 
-    setNodeMeshReplaced(entity: Entity_2, replaced: boolean): void;
-
-    setEntityTransform(entity: Entity_2, position: readonly [number, number, number], rotation: readonly [number, number, number, number], scale: readonly [number, number, number]): void;
+    setEntityTransform(entity: Entity, position: readonly [number, number, number], rotation: readonly [number, number, number, number], scale: readonly [number, number, number]): void;
     /**
      * Re-parent `entity` under `newParent` in Filament's TransformManager
-     * hierarchy. Pass `null` for `newParent` to make `entity` a root
-     * (parent = root transform component). Synchronises the Filament
+     * hierarchy; `null` leaves it where it is. Synchronises the Filament
      * entity hierarchy with the editor manifest `node.parent` field
-     * after reparent / unparent operations.
+     * after reparent operations.
      *
      * Filament warning: re-parenting to a descendant = undefined behavior.
      * Caller must ensure no cycles.
      */
-    reparentEntity(entity: Entity_2, newParent: Entity_2 | null): void;
+    reparentEntity(entity: Entity, newParent: Entity | null): void;
+    /**
+     * A new entity of the addressed scene with a transform only — `parent`'s child (`null`: a root),
+     * at the LOCAL pose `position`, quaternion `rotation` `[x, y, z, w]`, `scale`: a scene node, light
+     * or camera built from the core's scene record. It goes with its scene, after what hangs
+     * under it. `null` on a Filament build without `TransformManager.create`.
+     */
+    createNodeEntity(parent: Entity | null, position: readonly [number, number, number], rotation: readonly [number, number, number, number], scale: readonly [number, number, number]): Entity | null;
 
-    attachEntityToParent(entity: Entity_2, parent: Entity_2 | null, position: readonly [number, number, number], rotation: readonly [number, number, number, number], scale: readonly [number, number, number]): void;
+    attachEntityToParent(entity: Entity, parent: Entity | null, position: readonly [number, number, number], rotation: readonly [number, number, number, number], scale: readonly [number, number, number]): void;
 
     render(): boolean;
 
@@ -363,13 +324,10 @@ declare interface FilamentEngineHandle {
      * Manually bump the scene-version counter. Useful for callers who
      * mutate the scene through Filament APIs not wrapped by this
      * handle (e.g. plugin extensions). Auto-bumped by all built-in
-     * mutators ({@link loadAsset}, {@link removeMainAsset},
-     * {@link hideEntity}, {@link showEntity},
+     * mutators ({@link loadAsset}, {@link hideEntity}, {@link showEntity},
      * {@link setEntityTransform}, {@link setSize}).
      */
     bumpSceneVersion(): void;
-
-    bumpSkinMatrices(): void;
     /**
      * Inspect the current dirty-version counters. Primarily for
      * tests / diagnostics — production code should rely on the
@@ -394,24 +352,15 @@ declare interface FilamentEngineHandle {
     isPaused(): boolean;
     /* Excluded from this release type: setRenderLoopCallbacks */
 
-    setMorphWeights(entity: Entity_2, weights: ReadonlyMap<number, number>): void;
-    /**
-     * GPU picking: query which renderable entity is at the given viewport
-     * pixel coordinates. Returns the node name (from the entity map) or
-     * null if nothing was hit. 1-2 frame latency (Filament constraint).
-     */
-    pickAtCoords(x: number, y: number): Promise<string | null>;
-
     pickNodeIdAtCoords(x: number, y: number, projection: SceneProjection): Promise<string | null>;
 
     applyRenderSettings(settings: RenderSettings, options?: {
         readonly keepLive?: boolean;
     }): void;
     /**
-     * Remove a `FilamentAsset` from the engine's internal tracking array
-     * WITHOUT destroying it. Used by `AssetRegistry.dispose()` after it
-     * has already called `loader.destroyAsset(asset)` — prevents the
-     * engine's own `dispose()` from double-freeing the same native handle.
+     * Remove a decoration `FilamentAsset` from the engine's internal tracking array WITHOUT
+     * destroying it — for a caller that already called `loader.destroyAsset(asset)`, so the
+     * engine's own `dispose()` does not free the same native handle twice.
      */
     removeAssetRef(asset: FilamentAsset): void;
 
@@ -420,10 +369,6 @@ declare interface FilamentEngineHandle {
     setDecorationKindsVisible(kinds: Readonly<Partial<Record<DecorationKind, boolean>>>): void;
 
     setMaterialsVisible(visible: boolean): void;
-
-    assignMaterialSlot(entity: unknown, slot: number, materialInstance: unknown): void;
-
-    heldMaterialAt(entity: unknown, slot: number): unknown;
 
     setPolygonsVisible(visible: boolean): void;
     /**
@@ -450,7 +395,7 @@ declare interface FilamentEngineHandle {
      */
     drawnStats(selectedHosts?: readonly unknown[] | null): DrawnStats;
 
-    removeOverlayEntities(entities: readonly Entity_2[]): void;
+    removeOverlayEntities(entities: readonly Entity[]): void;
 
     applyManifestLights(lights: readonly ManifestLightView[]): void;
 
@@ -458,10 +403,10 @@ declare interface FilamentEngineHandle {
 
     getLightView(lightId: string): ManifestLightView | undefined;
 
-    getLightEntity(lightId: string): Entity_2 | undefined;
+    getLightEntity(lightId: string): Entity | undefined;
 
     upsertGeneratedMesh(id: string, geometry: GeneratedMeshGeometry, opts?: {
-        readonly parent?: Entity_2 | null;
+        readonly parent?: Entity | null;
         readonly materialSlug?: string | null;
         /** Palette entry for `materialSlug` when the baked asset has no instance for it. */
         readonly materialParams?: GeneratedMeshMaterialParams | null;
@@ -471,12 +416,27 @@ declare interface FilamentEngineHandle {
         readonly flow?: {
             readonly pulseParams: GeneratedMeshMaterialParams | null;
         } | null;
+        /**
+         * gltfio's key of the trunk's primitive: a file mesh of a scene built from the core's scene
+         * record — drawn in the record's scene-mesh form of `materialSlug` (`prepareScene` materials).
+         */
+        readonly materialKey?: MaterialKeyView | null;
 
         readonly groups?: readonly {
             readonly materialSlug: string | null;
             readonly materialParams: GeneratedMeshMaterialParams | null;
+            readonly materialKey?: MaterialKeyView | null | undefined;
         }[] | null;
-    }): Entity_2 | null;
+        /**
+         * A file mesh's parts (same order as `geometry.parts`): each wears its own look on its own
+         * key; absent = the trunk's.
+         */
+        readonly parts?: readonly {
+            readonly materialSlug: string | null;
+            readonly materialParams: GeneratedMeshMaterialParams | null;
+            readonly materialKey?: MaterialKeyView | null | undefined;
+        }[] | null;
+    }): Entity | null;
     /**
      * Upload the pulse table of generator `id` (the core's `PulseTable`; `null` clears it).
      * No-op for a mesh drawn without `flow`. Bumps scene version.
@@ -485,10 +445,25 @@ declare interface FilamentEngineHandle {
     /** Remove the procedural mesh of generator `id` (no-op when unknown). */
     removeGeneratedMesh(id: string): void;
     /** Entity of the procedural mesh of generator `id`, or `undefined`. */
-    getGeneratedMeshEntity(id: string): Entity_2 | undefined;
+    getGeneratedMeshEntity(id: string): Entity | undefined;
+    /**
+     * Morph weights of the file mesh `id` (a node's mesh of a scene built from the core's scene
+     * record): `weights` maps index → value, missing ones 0; kept across rebuilds of its renderable.
+     * No-op for a mesh without morph targets.
+     */
+    setGeneratedMeshMorphWeights(id: string, weights: ReadonlyMap<number, number>): void;
+    /**
+     * Bend the skinned file mesh `id`'s part `part` (0 for an unsplit skin) by the core's palette
+     * (`bones`: `f32 × 16` column-major per bone, `inv(W_mesh) × W_joint × IBM`) and set its box
+     * (`null` keeps the last); kept across rebuilds. No-op for an unknown mesh or part.
+     */
+    setGeneratedMeshBones(id: string, part: number, bones: Float32Array, bounds: {
+        readonly min: readonly number[];
+        readonly max: readonly number[];
+    } | null): void;
 
     syncModuleInstances(generatorId: string, symbol: string, batch: ModuleInstanceBatch, opts?: {
-        readonly parent?: Entity_2 | null;
+        readonly parent?: Entity | null;
     }): void;
     /** Drop every module instance of generator `generatorId` (no-op when unknown). */
     removeModuleInstances(generatorId: string): void;
@@ -498,7 +473,6 @@ declare interface FilamentEngineHandle {
     getModuleInstanceCount(generatorId: string): number;
 
     setMaterialGraphSource(source: MaterialGraphSource | null, opts?: {
-        readonly objectOf?: (entity: Entity_2) => string | null;
 
         readonly keep?: boolean;
     }): void;
@@ -509,6 +483,15 @@ declare interface FilamentEngineHandle {
     refreshMaterialGraphs(slugs: Iterable<string>): void;
 
     getGeneratedTextureCount(): number;
+    /**
+     * Resolves once every picture this engine is decoding for the built-in looks' maps and the node
+     * materials' texture arrays is on its slots (E6-I): a host shows a scene with its pictures, as
+     * iOS decodes them before its first frame and gltfio's `loadResources` before a GLB is shown.
+     * Path B's standard maps are waited on by `prepareScene`. `true` when there was one to wait for.
+     */
+    picturesLanded?(): Promise<boolean>;
+
+    decodePicture?(bytes: Uint8Array): Promise<DecodedPicture | null>;
 
     applyManifestEnvironment(env: ResolvedEnvironment | null): void;
 
@@ -605,6 +588,47 @@ declare interface GeneratedMeshGeometry {
     readonly epoch: number;
 
     readonly groups?: readonly GeneratedMeshGroup[] | undefined;
+    /** `TEXCOORD_1` per vertex (2 each); absent / empty = gltfio's dummy (1, 1) in the gltfio layout. */
+    readonly uvs1?: Float32Array | undefined;
+    /**
+     * A file mesh drawn as gltfio draws its primitives (a scene built from the core's scene record):
+     * the attributes each primitive carries in the file — one per group, or one without groups.
+     * Present → {@link gltfioLayout}; absent → the procedural layout.
+     */
+    readonly primitives?: readonly PrimitiveAttributes[] | undefined;
+    /** Mesh-space box of the positions (the core's `bounds`); absent / `null` = computed here. */
+    readonly bounds?: {
+        readonly min: readonly number[];
+        readonly max: readonly number[];
+    } | null | undefined;
+    /**
+     * A file mesh's points / lines / strips (the core's `parts`): more primitives of the same
+     * renderable, each in its own buffers in gltfio's layout, drawn with its own Filament
+     * `PrimitiveType`. Absent / empty = the mesh's groups alone; a mesh of parts alone has no indices.
+     */
+    readonly parts?: readonly GeneratedMeshPart[] | undefined;
+    /**
+     * A file mesh's morph targets (glTF §3.7.2.2): one buffer over every primitive's vertices — the
+     * mesh's groups at offset 0, then each part — with each target's position deltas and tangent
+     * frames. Their count is the mesh's (at most {@link MAX_MORPH_TARGETS}).
+     */
+    readonly morphTargets?: readonly GeneratedMeshMorphTarget[] | undefined;
+    /**
+     * A skinned file mesh: `JOINTS_0` (4 per vertex, positions in its skin's joints — in its part's
+     * palette once cut) and `WEIGHTS_0` (4 per vertex). Both present → the renderable is skinned and
+     * bent by the palettes {@link GeneratedMeshSceneManager.setBones} hands it.
+     */
+    readonly joints?: Uint16Array | undefined;
+    readonly weights?: Float32Array | undefined;
+    /** Bones of an unsplit skin: its skin's joint count, the palette's length. */
+    readonly skinBones?: number | undefined;
+    /**
+     * A skin cut over 256 joints (the core's `skinParts`): one renderable per part, drawing its index
+     * range of its group with its own palette. Absent / empty = one renderable, `skinBones` bones.
+     */
+    readonly skinParts?: readonly GeneratedMeshSkinPart[] | undefined;
+
+    readonly stored?: StoredStreamsView | undefined;
 }
 
 
@@ -635,6 +659,8 @@ declare interface GeneratedMeshMaterialParams {
     readonly alphaMode?: 'opaque' | 'mask' | 'blend' | 'add' | null | undefined;
     readonly alphaCutoff?: number | null | undefined;
 
+    readonly thin?: boolean | undefined;
+
     readonly diffuseTransmission?: number | null | undefined;
     readonly diffuseTransmissionColor?: readonly [number, number, number] | null | undefined;
 
@@ -644,6 +670,47 @@ declare interface GeneratedMeshMaterialParams {
         readonly color: readonly [number, number, number];
         readonly power: number;
     } | null | undefined;
+}
+
+/** One morph target's deltas over a primitive's vertices (`xyz` each; empty = moves none). */
+declare interface GeneratedMeshMorphTarget {
+    readonly positions: Float32Array;
+    readonly normals: Float32Array;
+    readonly tangents: Float32Array;
+}
+
+/** A file mesh's point / line / strip primitive (one of the core's `parts`). */
+declare interface GeneratedMeshPart {
+    readonly topology: PartTopology;
+    readonly positions: Float32Array;
+    readonly normals: Float32Array;
+    readonly uvs: Float32Array;
+    readonly uvs1?: Float32Array | undefined;
+    readonly colors?: Float32Array | undefined;
+    readonly tangents?: Float32Array | undefined;
+    readonly indices: Uint32Array;
+    /** Which attributes it carries in the file; absent = none beside its positions. */
+    readonly attributes?: PrimitiveAttributes | undefined;
+    /** Its share of the mesh's morph targets, by target; a missing one moves none of it. */
+    readonly morphTargets?: readonly GeneratedMeshMorphTarget[] | undefined;
+
+    readonly stored?: StoredStreamsView | undefined;
+    readonly bounds?: {
+        readonly min: readonly number[];
+        readonly max: readonly number[];
+    } | null | undefined;
+}
+
+/** One part of a skin cut over 256 joints: its palette's number, its range and bone count. */
+declare interface GeneratedMeshSkinPart {
+    /** The palette's `part`. */
+    readonly part: number;
+    /** The group its range lies in (its material). */
+    readonly group: number;
+    readonly indexStart: number;
+    readonly indexCount: number;
+    /** Its palette's length. */
+    readonly bones: number;
 }
 
 
@@ -659,9 +726,18 @@ declare interface GeneratedMeshTextureRef {
     readonly texCoord?: number | null | undefined;
 }
 
+
+declare interface GltfioLoader {
+    createAsset(bytes: Parameters<FilamentNs.gltfio$AssetLoader['createAsset']>[0]): FilamentAsset | null;
+    destroyAsset(asset: FilamentAsset): void;
+}
+
 /** Writes a palette look keeps for instances filled later, and whom to tell what came of them. */
 declare interface HeldPaletteWrites {
-    readonly writes: ReadonlyMap<string, number | readonly number[]>;
+    /** The live writes by the parameter each sets (`liveWrites`). */
+    readonly writes: ReadonlyMap<string, ParamWrite>;
+    /** Writes kept for scene-mesh instances (else built-in ones). */
+    readonly sceneMesh?: boolean | undefined;
     /** Nothing draws the slug at the next render (an unassigned material or a stale GLB). */
     readonly miss: () => void;
     /** The instances of `material` that draw the slug at the next render lack `parameters`. */
@@ -702,6 +778,8 @@ declare interface InputDescription_2 {
     computed?: string;
     doc?: string;
     settings?: InputSettings;
+
+    missingGlyphs?: number;
 }
 
 /**
@@ -794,13 +872,16 @@ declare interface ManifestLightView {
      */
     readonly direction?: readonly [number, number, number] | null | undefined;
 
-    readonly parentEntity?: Entity_4 | null | undefined;
+    readonly parentEntity?: Entity_3 | null | undefined;
 
     readonly carrierAnchored?: boolean | undefined;
 }
 
 
-declare type MaterialGraphFamily = 'mesh' | 'generated' | 'instanced';
+declare type MaterialGraphFamily = "mesh" | "generated" | "instanced";
+
+
+declare type MaterialGraphFamily_2 = 'mesh' | 'generated' | 'instanced';
 
 /** One texture array: its sampler uniform, colour space, size and `manifest.textures[]` layers. */
 declare interface MaterialGraphGroup {
@@ -832,9 +913,11 @@ declare interface MaterialGraphPixels {
 /** What the host gives the manager for one scene. */
 declare interface MaterialGraphSource {
     /** The core's generated material of `slug` on `family`; `undefined` = the built-in path. */
-    graph(slug: string, family: MaterialGraphFamily): MaterialGraphView | undefined;
+    graph(slug: string, family: MaterialGraphFamily_2): MaterialGraphView | undefined;
+
+    missed(slug: string, family: MaterialGraphFamily_2): boolean;
     /** Its uniforms at the scene's current values (`objectSeed` excluded, `maskThreshold` included). */
-    values(slug: string, family: MaterialGraphFamily): Readonly<Record<string, readonly number[]>> | undefined;
+    values(slug: string, family: MaterialGraphFamily_2): Readonly<Record<string, readonly number[]>> | undefined;
     /** The package (the `.trd` asset or the editor's compile); `null` = none, the built-in path. */
     packageBytes(view: MaterialGraphView): Uint8Array | null | Promise<Uint8Array | null>;
     /** A package's Filament version and backends, read without loading it (`materialPackageInfo`). */
@@ -869,8 +952,54 @@ declare interface MaterialGraphView {
     }[];
 }
 
+/** Filament's `gltfio::MaterialKey`, field for field (`tride_core::material_graph::MaterialKey`). */
+declare interface MaterialKeyView {
+    readonly doubleSided: boolean;
+    readonly unlit: boolean;
+    readonly hasVertexColors: boolean;
+    readonly hasBaseColorTexture: boolean;
+    readonly hasNormalTexture: boolean;
+    readonly hasOcclusionTexture: boolean;
+    readonly hasEmissiveTexture: boolean;
+    readonly useSpecularGlossiness: boolean;
+    readonly alphaMode: 'opaque' | 'mask' | 'blend';
+    readonly enableDiagnostics: boolean;
+    readonly hasMetallicRoughnessTexture: boolean;
+    readonly metallicRoughnessUv: number;
+    readonly baseColorUv: number;
+    readonly hasClearCoatTexture: boolean;
+    readonly clearCoatUv: number;
+    readonly hasClearCoatRoughnessTexture: boolean;
+    readonly clearCoatRoughnessUv: number;
+    readonly hasClearCoatNormalTexture: boolean;
+    readonly clearCoatNormalUv: number;
+    readonly hasClearCoat: boolean;
+    readonly hasTransmission: boolean;
+    readonly hasTextureTransforms: boolean;
+    readonly emissiveUv: number;
+    readonly aoUv: number;
+    readonly normalUv: number;
+    readonly hasTransmissionTexture: boolean;
+    readonly transmissionUv: number;
+    readonly hasSheenColorTexture: boolean;
+    readonly sheenColorUv: number;
+    readonly hasSheenRoughnessTexture: boolean;
+    readonly sheenRoughnessUv: number;
+    readonly hasVolumeThicknessTexture: boolean;
+    readonly volumeThicknessUv: number;
+    readonly hasSheen: boolean;
+    readonly hasIor: boolean;
+    readonly hasVolume: boolean;
+    readonly hasDispersion: boolean;
+    readonly hasSpecular: boolean;
+    readonly hasSpecularTexture: boolean;
+    readonly hasSpecularColorTexture: boolean;
+    readonly specularTextureUv: number;
+    readonly specularColorTextureUv: number;
+}
 
-declare type MaterialPackageProblemCode = 'material.package-missing' | 'material.package-stale' | 'material.package-version';
+
+declare type MaterialPackageProblemCode = 'material.package-missing' | 'material.package-stale' | 'material.package-version' | 'material.package-refused';
 
 /**
  * Live wrapper around a per-canvas Filament engine. All resources are
@@ -885,6 +1014,33 @@ declare interface MaterialPaletteEntry {
     readonly attenuationColor?: readonly number[] | null | undefined;
     readonly attenuationDistance?: number | null | undefined;
 }
+
+/** What {@link FilamentEngineHandle.rekeyMaterial} did: the instances made again, or why none. */
+declare type MaterialRekey = {
+    readonly changed: number;
+} | {
+    readonly problem: string;
+};
+
+
+/**
+ * What a path B material draws without, and why: values its key asks for that the scene record
+ * does not carry (`missing`), a picture of its maps (`slots`) the scene does not hold (`absent`)
+ * or that could not be decoded, or a changed key Filament made no instance for (`kept`: the
+ * instances still drawn with the old key).
+ */
+declare type MaterialShortfall = {
+    readonly kind: 'uncarried';
+    readonly missing: readonly string[];
+} | {
+    readonly kind: 'picture';
+    readonly uri: string;
+    readonly slots: readonly string[];
+    readonly absent: boolean;
+} | {
+    readonly kind: 'key';
+    readonly kept: number;
+};
 
 declare interface ModuleInstanceBatch {
     readonly datablockUid: string;
@@ -926,11 +1082,52 @@ declare interface MsaaOptions {
 
 declare interface PaletteInstances {
     readonly instances: readonly FilamentNs.MaterialInstance[];
+    /**
+     * Those of `instances` a scene mesh wears as its glTF material (path B's standard instances):
+     * the core's alone — they take its `gltf/{name}` parameters, not the look's fields (L3).
+     */
+    readonly sceneMesh?: ReadonlySet<FilamentNs.MaterialInstance> | undefined;
     readonly emissiveStrength: number;
     /** The palette entry the instances were filled from — what a lone live write folds with. */
     readonly authored?: MaterialPaletteEntry | undefined;
-    remember(name: string, value: number | readonly number[]): void;
+    /**
+     * Keep a live write, by the parameter it sets, for instances filled later: the look's built-in
+     * ones, or with `sceneMesh` the scene-mesh ones. Each family keeps what it took — a parameter,
+     * the cut-off, the double side — and an instance made later takes it all (`applyLive`).
+     */
+    remember(parameter: string, write: ParamWrite, sceneMesh?: boolean): void;
 }
+
+/**
+ * One Filament parameter write a material write turns into (`filament-material-apply.ts`); kept
+ * live by the parameter it sets (`_maskThreshold` / `_doubleSided` for the instance state).
+ */
+declare type ParamWrite = {
+    readonly kind: 'float';
+    readonly name: string;
+    readonly value: number;
+} | {
+    readonly kind: 'float3';
+    readonly name: string;
+    readonly value: [number, number, number];
+} | {
+    readonly kind: 'float4';
+    readonly name: string;
+    readonly value: [number, number, number, number];
+} | {
+    readonly kind: 'mat3';
+    readonly name: string;
+    readonly value: number[];
+} | {
+    readonly kind: 'doubleSided';
+    readonly value: boolean;
+} | {
+    readonly kind: 'maskThreshold';
+    readonly value: number;
+};
+
+/** How a file primitive's indices assemble (the core's `MeshTopology`). */
+declare type PartTopology = 'triangles' | 'lines' | 'points' | 'line_strip' | 'triangle_strip';
 
 
 declare interface PixelationOptions {
@@ -952,9 +1149,16 @@ export declare type PointerPhase = Parameters<ScenePlayer['pointer']>[0];
 
 declare type PointerPhase_2 = "down" | "move" | "up" | "cancel";
 
-
 declare interface PreparedScene {
     readonly id: number;
+}
+
+/** Which attributes a glTF primitive carries in its file (the core's `VertexAttributesView`). */
+declare interface PrimitiveAttributes {
+    readonly normals: boolean;
+    readonly uv0: boolean;
+    readonly tangents: boolean;
+    readonly colors: boolean;
 }
 
 declare type QualityLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'ULTRA';
@@ -1078,15 +1282,25 @@ declare interface SceneEvent_2 {
     payload: Record<string, number | boolean | string>;
 }
 
+/**
+ * A scene's materials from the core's scene record (path B): the record's `materials`, a picture's
+ * bytes by archive path, and who hears of a material drawn short of what it asks for.
+ */
+declare interface SceneMaterialSource {
+    readonly materials: readonly SceneRecordMaterial[];
+    readonly image: (uri: string) => Uint8Array | null;
+    readonly partial: (slug: string, shortfall: MaterialShortfall) => void;
+}
+
 declare class ScenePlayer {
     /** Replaced by `restoreRenderer` once the canvas' WebGL context is back. */
     private engine;
     private readonly filament;
     private readonly canvas;
     private readonly options;
-
-    private core;
     private runtime;
+    /** The last bone palette of each skinned mesh part of the loaded scene, by `mesh:part`. */
+    private readonly palettes;
     private scene;
     /** The loaded scene's CPU copies, for `restoreRenderer`. */
     private source;
@@ -1121,6 +1335,28 @@ declare class ScenePlayer {
     /** The archive's bytes → the scene on the canvas, its first frame applied. */
     load(archive: Uint8Array): Promise<void>;
     /**
+     * The pictures the first tick asked for (a generator's leaf maps, node-material layers) on their
+     * slots, then the frame drawn again: the scene a host is told is loaded wears them, as on iOS,
+     * whose bridge decodes them before its first frame. A standing scene draws no frame by itself;
+     * a scene with no picture on the way is drawn no extra frame.
+     */
+    private showWithPictures;
+    /**
+     * The runtime of `archive` on `core`; a lite core that leaves out a module the scene needs
+     * (text) gives way to the full build — a scene is never drawn without it (a second instance on a
+     * page whose module runs the lite one).
+     */
+    private openRuntime;
+
+    private stageRecord;
+    /**
+     * The record's materials for the engine, pictures from the runtime; a material drawn short of
+     * what it asks for is said once per shortfall as problem `partialDraw`.
+     */
+    private sceneMaterials;
+    /** The environment `view` asks for; `prepared` is dropped when resolving it fails. */
+    private stageEnvironment;
+    /**
      * The canvas' WebGL context is gone (`webglcontextlost`; the host calls `preventDefault()` so the
      * browser may give it back): the loop stops and the engine goes with every GPU object. The
      * runtime — the scene's state machine, inputs, time and the host's bindings — and the CPU copies
@@ -1129,6 +1365,26 @@ declare class ScenePlayer {
      * and sound reach the runtime as before.
      */
     loseRenderer(): void;
+    /**
+     * The world matrix of every node, light and camera of the loaded scene as the renderer composes
+     * it (column-major, 16 numbers) — by node uid and light / camera id; one the renderer has no
+     * entity for is left out. For checks (the parity gate compares them with `coreNodeWorlds`); `{}`
+     * without a scene.
+     */
+    nodeWorlds(): Record<string, number[]>;
+    /**
+     * The core's world matrix of every node of the loaded scene — its node table after the last tick
+     * (`RuntimeHandle.nodeWorlds`, column-major, 16 numbers) — by node uid; no lights or cameras (the
+     * table has no rows for them). For checks (the parity gate compares `nodeWorlds` with these); `{}`
+     * without a scene.
+     */
+    coreNodeWorlds(): Record<string, number[]>;
+    /**
+     * The check mode of the skins (the parity gate): the core's last palette of every skinned mesh
+     * part against the bones gltfio's animator would set from the worlds this renderer composed
+     * (`checkBonePalettes`); `null` without a scene or a palette.
+     */
+    bonePaletteCheck(): BonePaletteCheck | null;
     /** `loseRenderer` ran and `restoreRenderer` has not finished yet. */
     get isRendererLost(): boolean;
 
@@ -1138,12 +1394,16 @@ declare class ScenePlayer {
      * the scene built on it again from the CPU copies, and — the runtime handing out its whole state
      * — its first frame shows the scene where it stood; the loop is the host's to resume (`play`).
      * Resolves `true` once drawn, `false` when the context was lost again meanwhile. Throws when the
-     * player is disposed, when the runtime cannot hand out its whole state (`keepsStateOnRestore`),
-     * and what building the engine throws.
+     * player is disposed, and what building the engine throws.
      */
     restoreRenderer(): Promise<boolean>;
     /**
-     * The engine half of a scene: the prepared GLB addressed and filled from the manifest, the
+     * One entity per row of the core's scene record under its parent row, at its rest pose, and a
+     * carrier per light and camera — the projection; a row's place is its number.
+     */
+    private placeRecord;
+    /**
+     * The engine half of a scene: the prepared scene addressed and filled from the record, the
      * runtime's node materials, parametric nodes and module instances wired, then committed. `load`
      * runs it for a new runtime, `restoreRenderer` for the kept one on a new engine.
      */
@@ -1270,6 +1530,8 @@ declare class ScenePlayer {
     /** A source the player made: attached, or disposed when the player went or the input is refused. */
     private adopt;
     private applyFrame;
+
+    private applyPalettes;
     private render;
     /** Width / height of the drawing buffer — the aspect the camera is applied with. */
     private canvasAspect;
@@ -1328,17 +1590,17 @@ declare class SceneProjection {
     private readonly entries;
     private readonly reverse;
     /** Get primary entity for a manifest node. */
-    get(nodeId: string): Entity_3 | null;
+    get(nodeId: string): Entity_2 | null;
     /** Get all entities for a manifest node (multi-primitive hide/show). */
-    getAll(nodeId: string): readonly Entity_3[] | null;
+    getAll(nodeId: string): readonly Entity_2[] | null;
     /** Whether a manifest node has a mapped entity. */
     has(nodeId: string): boolean;
     /** Reverse lookup: Filament entity → manifest nodeId (for GPU picking). */
-    resolveEntity(entity: Entity_3): string | null;
+    resolveEntity(entity: Entity_2): string | null;
     /** Register entity for a manifest node. Called by buildProjection + reconciler. */
-    set(nodeId: string, primary: Entity_3, all?: readonly Entity_3[]): void;
+    set(nodeId: string, primary: Entity_2, all?: readonly Entity_2[]): void;
 
-    setCarrier(id: string, carrier: Entity_3): void;
+    setCarrier(id: string, carrier: Entity_2): void;
     /** Whether `id`'s primary is a baked carrier node (see {@link setCarrier}). */
     isCarrier(id: string): boolean;
     /**
@@ -1346,18 +1608,74 @@ declare class SceneProjection {
      * the primary is untouched). Returns `true` when membership grew. No entry →
      * `false` (a glyph manager must never mint a carrier primary).
      */
-    augment(id: string, entities: readonly Entity_3[]): boolean;
+    augment(id: string, entities: readonly Entity_2[]): boolean;
     /**
      * Remove pick/hide entities from an entry's `all` (the primary is never
      * removed). Returns `true` when membership shrank; no entry → `false`.
      */
-    detach(id: string, entities: readonly Entity_3[]): boolean;
+    detach(id: string, entities: readonly Entity_2[]): boolean;
     /** Remove entry for a deleted/hidden node. */
     delete(nodeId: string): void;
     /** Number of mapped nodes. */
     get size(): number;
     /** Clear all entries (used on scene reload). */
     clear(): void;
+}
+
+
+declare type SceneRecordDrawForm = "standard" | "built_in" | "graph";
+
+declare interface SceneRecordMaterial {
+    slug: string;
+    mesh: SceneRecordDrawForm;
+    generated: SceneRecordDrawForm;
+    instanced: SceneRecordDrawForm;
+
+    standard: {
+        params: { name: string; value: number[] }[];
+        maps: { slot: string; texture: SceneRecordTexture; srgb: boolean }[];
+        doubleSided: boolean;
+        alphaMode: "opaque" | "mask" | "blend";
+        alphaCutoff: number | null;
+    } | null;
+    /** When `generated` or `instanced` is `built_in`: the built-in material's parameters. */
+    builtIn: {
+        baseColor: [number, number, number, number];
+        metallic: number;
+        roughness: number;
+        emissive: [number, number, number];
+        baseColorTexture: SceneRecordTexture | null;
+        emissiveTexture: SceneRecordTexture | null;
+        alphaMode: "mask" | "blend" | "add" | null;
+        alphaCutoff: number | null;
+        diffuseTransmission: number | null;
+        diffuseTransmissionColor: [number, number, number] | null;
+        diffuseTransmissionColorTexture: SceneRecordTexture | null;
+        rimColor: [number, number, number] | null;
+        rimPower: number | null;
+
+        thin: boolean;
+    } | null;
+    /** One per family drawn `graph`; the package `null` when the scene keeps none there. */
+    graphs: {
+        family: MaterialGraphFamily;
+        packageUri: string | null;
+        hash: string | null;
+        name: string | null;
+        problem: string | null;
+    }[];
+}
+
+declare interface SceneRecordTexture {
+    /** Position in `images`. */
+    image: number;
+    uri: string;
+    mimeType: string | null;
+    magFilter: number | null;
+    minFilter: number | null;
+    wrapS: number | null;
+    wrapT: number | null;
+    texCoord: number;
 }
 
 /** The scene's render settings as its designer set them, every default filled in. */
@@ -1413,6 +1731,29 @@ declare interface StateChange_2 {
     to: string;
 
     transition: string;
+}
+
+
+declare interface StoredStreamsView {
+    readonly positions?: StoredStreamView;
+    readonly uvs?: StoredStreamView;
+    readonly uvs1?: StoredStreamView;
+    readonly colors?: StoredStreamView;
+    readonly weights?: StoredStreamView;
+}
+
+/**
+ * One vertex stream as the file stores it, for Filament's vertex buffer as gltfio sets it: the
+ * `AttributeType` of `component` × `components`, `normalized`, byte stride `stride`.
+ */
+declare interface StoredStreamView {
+    readonly component: 'i8' | 'u8' | 'i16' | 'u16';
+    readonly normalized: boolean;
+    readonly components: 2 | 3 | 4;
+    /** Bytes per vertex: the components padded to a multiple of 4. */
+    readonly stride: number;
+    /** Little-endian rows, one per vertex. */
+    readonly bytes: Uint8Array;
 }
 
 declare type SwapChain = FilamentNs.SwapChain;
