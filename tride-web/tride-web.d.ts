@@ -531,9 +531,9 @@ declare interface FilamentEnvironmentMutation {
 
 declare interface FilamentLightMutation {
     readonly lightId: string;
-    readonly property: 'intensity' | 'color' | 'range' | 'innerConeAngle' | 'outerConeAngle' | 'position' | 'rotation';
+    readonly property: 'intensity' | 'color' | 'range' | 'innerConeAngle' | 'outerConeAngle' | 'castShadows';
     readonly component?: 0 | 1 | 2;
-    readonly value: number | readonly number[];
+    readonly value: number | boolean | readonly number[];
 }
 
 
@@ -846,7 +846,7 @@ declare interface InputsSnapshot_2 {
 
 export declare type LayerState = ReturnType<ScenePlayer['layerStates']>[number];
 
-/** Minimal per-light shape consumed by the engine (resolved from `manifest.lights[]`). */
+
 declare interface ManifestLightView {
     readonly id: string;
     readonly lightType: 'directional' | 'point' | 'spot';
@@ -855,13 +855,13 @@ declare interface ManifestLightView {
     /** Lux (directional) or candela (point/spot). */
     readonly intensity: number;
 
-    readonly range?: number | null | undefined;
+    readonly range: number;
     /** Spot inner cone half-angle (radians). */
-    readonly innerConeAngle?: number | null | undefined;
+    readonly innerConeAngle: number;
     /** Spot outer cone half-angle (radians). */
-    readonly outerConeAngle?: number | null | undefined;
-    /** Shadow caster; `null`/absent = platform default (directional/spot cast, point not). */
-    readonly castShadows?: boolean | null | undefined;
+    readonly outerConeAngle: number;
+    /** Whether the light casts shadows. */
+    readonly castShadows: boolean;
 
     readonly position?: readonly [number, number, number] | null | undefined;
 
@@ -1365,12 +1365,7 @@ declare class ScenePlayer {
      * and sound reach the runtime as before.
      */
     loseRenderer(): void;
-    /**
-     * The world matrix of every node, light and camera of the loaded scene as the renderer composes
-     * it (column-major, 16 numbers) — by node uid and light / camera id; one the renderer has no
-     * entity for is left out. For checks (the parity gate compares them with `coreNodeWorlds`); `{}`
-     * without a scene.
-     */
+
     nodeWorlds(): Record<string, number[]>;
     /**
      * The core's world matrix of every node of the loaded scene — its node table after the last tick
@@ -1398,8 +1393,8 @@ declare class ScenePlayer {
      */
     restoreRenderer(): Promise<boolean>;
     /**
-     * One entity per row of the core's scene record under its parent row, at its rest pose, and a
-     * carrier per light and camera — the projection; a row's place is its number.
+     * One entity per row of the core's scene record under its parent row, at its rest pose — the
+     * projection; a row's place is its number.
      */
     private placeRecord;
     /**
@@ -1537,6 +1532,8 @@ declare class ScenePlayer {
     private canvasAspect;
     /** The default camera's pose at `aspect`; the runtime is asked again only when it changed. */
     private defaultPose;
+
+    private switchCamera;
     private applyCamera;
     /** The runtime picks in the canvas' CSS space; a host camera only while no scene camera is active. */
     private pushScroll;
@@ -1576,7 +1573,7 @@ declare interface ScenePlayerProblem {
     /** What the problem is about: a pointer, `<tick>`, `audio.<input>` / `image.<input>` / `text.<input>`. */
     readonly pointer: string;
     /** `host`: something the page itself did — an attribute, a call the element could not take. */
-    readonly code: RouteProblem['code'] | 'diagnostic' | 'runtime' | 'audio' | 'image' | 'host' | 'text.missing-glyphs' | MaterialPackageProblemCode;
+    readonly code: RouteProblem['code'] | 'diagnostic' | 'runtime' | 'audio' | 'image' | 'host' | 'text.missing-glyphs' | 'camera.unknown' | MaterialPackageProblemCode;
     readonly message: string;
 }
 
@@ -1599,14 +1596,10 @@ declare class SceneProjection {
     resolveEntity(entity: Entity_2): string | null;
     /** Register entity for a manifest node. Called by buildProjection + reconciler. */
     set(nodeId: string, primary: Entity_2, all?: readonly Entity_2[]): void;
-
-    setCarrier(id: string, carrier: Entity_2): void;
-    /** Whether `id`'s primary is a baked carrier node (see {@link setCarrier}). */
-    isCarrier(id: string): boolean;
     /**
      * Add pick/hide entities to an existing entry's `all` (idempotent by entity id;
      * the primary is untouched). Returns `true` when membership grew. No entry →
-     * `false` (a glyph manager must never mint a carrier primary).
+     * `false` (a glyph manager must never mint a primary).
      */
     augment(id: string, entities: readonly Entity_2[]): boolean;
     /**

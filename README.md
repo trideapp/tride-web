@@ -1,4 +1,4 @@
-# Tride Web — Tride 0.14.0
+# Tride Web — Tride 0.15.0
 
 Plays Tride scenes (`.trd`) in a web page: `<tride-scene>` is one HTML tag on top of the Tride runtime
 (WASM) and the Filament renderer (WebGL2) — the same player that draws the Tride Editor viewport. A scene
@@ -7,7 +7,7 @@ is built in Tride Editor ([tride-editor](https://github.com/trideapp/tride-edito
 show.
 
 This repository is generated from the Tride source repository: one commit per release, changes are not
-accepted here; questions and bugs go to Issues. Licence — `LICENSE` (Tride Players Licence 1.1); third-party
+accepted here; questions and bugs: support@tride.ws. Licence — `LICENSE` (Tride Players Licence 1.1); third-party
 components and their licences — `THIRD_PARTY_NOTICES.md`; which build this release is — `SNAPSHOT.md`;
 what changed — `CHANGELOG.md`.
 
@@ -15,8 +15,8 @@ what changed — `CHANGELOG.md`.
 
 | | |
 |---|---|
-| GitHub Packages | The npm package `@trideapp/web` 0.14.0: the module, the runtime's WASM (full and lite), Filament, the environments |
-| Releases | The same package as a `.tgz` file — to install without a token |
+| Releases | The npm package `@trideapp/web` 0.15.0 as a `.tgz` file: the module, the runtime's WASM (full and lite), Filament, the environments |
+| GitHub Packages | The same package in the npm registry of this repository — to install by name, with a GitHub token |
 | `index.html`, `embed.html` | A ready static site — the pages below |
 | `tride-web/`, `filament/`, `ibl/` | The library for the site: the module with the runtime's two WASM files, Filament, the built-in environments |
 
@@ -39,8 +39,14 @@ secure context).
 
 ## In your project
 
-The package is in GitHub Packages: you need a GitHub token (classic) with the `read:packages` scope. In
-the project's `.npmrc`:
+Take `trideapp-web-0.15.0.tgz` from Releases and install it — no account, no token:
+
+```bash
+npm install ./trideapp-web-0.15.0.tgz
+```
+
+Or by name from GitHub Packages: npm asks it for a token even for a public package — a GitHub token
+(classic) with the `read:packages` scope. In the project's `.npmrc`:
 
 ```
 @trideapp:registry=https://npm.pkg.github.com
@@ -48,10 +54,8 @@ the project's `.npmrc`:
 ```
 
 ```bash
-npm install @trideapp/web@0.14.0
+npm install @trideapp/web@0.15.0
 ```
-
-Without a token — `trideapp-web-0.14.0.tgz` from Releases: `npm install ./trideapp-web-0.14.0.tgz`.
 
 Serve `filament/` and `ibl/` from the package (`node_modules/@trideapp/web/`) as static files of the
 site and import the module:
