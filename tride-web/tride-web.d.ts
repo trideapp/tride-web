@@ -125,7 +125,9 @@ declare interface BonePaletteCheck {
 /** One binding the page made: the input, its source and the range it maps. */
 export declare type BoundInput = ReturnType<ScenePlayer['boundInputs']>[number];
 
-/** One host binding of an input. */
+/**
+ * One host binding of an input.
+ */
 declare interface BoundInput_2 {
     input: string;
     source: InputSource_2;
@@ -159,6 +161,20 @@ declare interface CameraLike {
 /** A member of Filament's `Camera$Projection` (`PERSPECTIVE`, `ORTHO`) as embind hands it out. */
 declare interface CameraProjectionMember {
     readonly value: number;
+}
+
+/** The canvas' WebGL context attributes a page chooses at `create`: `preserveDrawingBuffer`. */
+export declare type ContextAttributes = NonNullable<ScenePlayerOptions['contextAttributes']>;
+
+
+declare interface ContextAttributes_2 {
+    /**
+     * Keep the painted frame on the canvas until the next one is painted (`false` by default: the
+     * browser clears the buffer once it has shown the frame, so the frame can be read only in the
+     * task that painted it). With `true` the frame is read at any time — `new VideoFrame(canvas)`,
+     * `drawImage`, `createImageBitmap`, `toBlob`.
+     */
+    readonly preserveDrawingBuffer?: boolean | undefined;
 }
 
 /** A picture as stb gives it: RGBA8, rows top to bottom. */
@@ -317,7 +333,7 @@ declare interface FilamentEngineHandle {
 
     attachEntityToParent(entity: Entity, parent: Entity | null, position: readonly [number, number, number], rotation: readonly [number, number, number, number], scale: readonly [number, number, number]): void;
 
-    render(): boolean;
+    render(options?: RenderOptions_2): boolean;
 
     bumpCameraVersion(): void;
     /**
@@ -483,11 +499,13 @@ declare interface FilamentEngineHandle {
     refreshMaterialGraphs(slugs: Iterable<string>): void;
 
     getGeneratedTextureCount(): number;
+
+    inFlight?(): number;
     /**
-     * Resolves once every picture this engine is decoding for the built-in looks' maps and the node
-     * materials' texture arrays is on its slots (E6-I): a host shows a scene with its pictures, as
+     * Resolves once nothing of `inFlight` is left (E6-I): a host shows a scene with its pictures, as
      * iOS decodes them before its first frame and gltfio's `loadResources` before a GLB is shown.
-     * Path B's standard maps are waited on by `prepareScene`. `true` when there was one to wait for.
+     * `true` when there was something to wait for. It waits on decodes, uploads and package loads
+     * only — never on a timer or an animation frame, which a hidden page slows.
      */
     picturesLanded?(): Promise<boolean>;
 
@@ -568,6 +586,66 @@ declare interface FogOptions {
     density?: number;
     fogColorFromIbl?: boolean;
     color?: [number, number, number];
+}
+
+/** A step that was painted. */
+export declare interface FrameReport {
+    /** The step's number in its session, from 0. */
+    readonly index: number;
+    /** The scene's time after the step, nanoseconds since its load: the steps and ticks so far. */
+    readonly sceneTimeNs: number;
+    /**
+     * What the frame was painted without: pictures and material packages still on their way after
+     * the step (`FrameSession.pending`). Above 0, `await settled()` then `redraw()` gives the frame
+     * with them.
+     */
+    readonly pending: number;
+}
+
+export declare interface FrameSession {
+    /**
+     * Advance the scene by `dtSec` seconds and paint the frame, in this call: the same path as
+     * `tick`, the frame never skipped. Throws, nothing moved, a `RangeError` for a `dtSec` that is
+     * not a finite number above 0 and at most 0.1 s, and an `Error` once the session is closed or
+     * while the WebGL context is lost; an `Error` when the scene advanced and no frame was painted.
+     */
+    step(dtSec: number): FrameReport;
+    /** Paint the current state once more (after `settled()`); the scene's time does not move. */
+    redraw(): void;
+    /**
+     * Resolves once nothing is on its way to the scene: pictures the engine decodes, the standard
+     * materials' pictures, `setImage` calls not answered yet, node-material packages. Rejects when
+     * the session closes meanwhile. Paints nothing: the next `step` or `redraw` does.
+     */
+    settled(): Promise<void>;
+    /** How much `settled()` would wait for now; 0 once the session is closed. */
+    readonly pending: number;
+    /**
+     * The canvas keeps the painted frame until the next one is painted (its context was made with
+     * `preserveDrawingBuffer: true`): it can be read in a later task. `false`: read the frame in the
+     * task of its step.
+     */
+    readonly keepsFrame: boolean;
+    /** `false` once ended, or closed by a lost context or the player's `dispose`. */
+    readonly isOpen: boolean;
+    /** The frame size, the host's render knobs and the loop back as they were before the session. */
+    end(): void;
+}
+
+
+export declare interface FrameSessionOptions {
+    /** The frame's width in device pixels: the drawing buffer exactly (`setRenderSize`). */
+    readonly width: number;
+    readonly height: number;
+    /** How many device pixels make a point of pixelation; 1 by default. */
+    readonly pixelsPerPoint?: number | undefined;
+    /**
+     * `false` (the default): the session switches dithering, temporal anti-aliasing and dynamic
+     * resolution off over the host's render knobs, so the same scene state and time give the same
+     * frame. `true` keeps the scene's settings — and then a frame may depend on the frames painted
+     * before it.
+     */
+    readonly temporalEffects?: boolean | undefined;
 }
 
 /** Flat geometry streams as emitted by `RuntimeHandle.generatedGeometry` (WASM). */
@@ -750,14 +828,45 @@ declare interface HeldPaletteWrites {
  */
 declare type HostImageOutcome = 'loaded' | 'failed' | 'superseded';
 
+
+declare interface HostPicturePixels {
+    readonly width: number;
+    readonly height: number;
+    /** `width × height × 4` bytes; copied by the call, so the host may write on. */
+    readonly data: Uint8Array | Uint8ClampedArray;
+    /** Absent or `'srgb'`; any other colour space is refused. */
+    readonly colorSpace?: string | undefined;
+}
+
 /** What a host hands in: the file's bytes, a `Blob` / `File`, or a URL. */
 declare type HostPictureSource = Blob | ArrayBuffer | Uint8Array | string;
 
 /** How `setImage` ended: the scene shows the picture, its placeholder stays, or a later call came first. */
 export declare type ImageOutcome = HostImageOutcome;
 
+/**
+ * A picture as pixels, for `setImagePixels`: `width × height` RGBA8 texels in `data` (a
+ * `Uint8Array` or a `Uint8ClampedArray` of `width × height × 4` bytes), straight alpha, sRGB, rows
+ * top to bottom, each side 1…2048. An `ImageData` fits as it is.
+ */
+export declare type ImagePixels = HostPicturePixels;
+
 /** A picture for an image input: a `Blob` / `File`, the file's bytes, or a URL (fetched with CORS). */
 export declare type ImageSource = HostPictureSource;
+
+/**
+ * One input whose value changed over a tick: its `name`, its `value` after the tick and the one
+ * `previous` to it — a number, a bool, a string (an enum's variant, a text) or an array of numbers
+ * (a vector, a rotation, a colour), as `getInputs().values` holds them.
+ */
+export declare type InputChange = Parameters<Parameters<ScenePlayer['onInputChange']>[0]>[0];
+
+
+declare interface InputChange_2 {
+    name: string;
+    value: number | boolean | string | number[] | null;
+    previous: number | boolean | string | number[] | null;
+}
 
 /** One input in `getInputs()`: `name`, `kind` (`'string'` among them), `value`, `default`, limits, `settings`. */
 export declare type InputDescription = InputsSnapshot['inputs'][number];
@@ -931,6 +1040,8 @@ declare interface MaterialGraphSource {
     objectSeed(uid: string): number;
 
     hostPicture?(name: string, revision: number): MaterialGraphPixels | undefined;
+
+    refused?(slug: string, family: MaterialGraphFamily_2, view: MaterialGraphView, reason: string): void;
 }
 
 /** The generated material a palette slug draws with on one family (`RuntimeHandle.materialGraph`). */
@@ -999,7 +1110,7 @@ declare interface MaterialKeyView {
 }
 
 
-declare type MaterialPackageProblemCode = 'material.package-missing' | 'material.package-stale' | 'material.package-version' | 'material.package-refused';
+declare type MaterialPackageProblemCode = 'material.package-missing' | 'material.package-stale' | 'material.package-version' | 'material.package-refused' | 'material.package-renderer-refused';
 
 /**
  * Live wrapper around a per-canvas Filament engine. All resources are
@@ -1059,7 +1170,7 @@ declare interface ModuleInstanceBatch {
     readonly materialParams?: GeneratedMeshMaterialParams | null | undefined;
 }
 
-/** One datablock decoded by the core (`BakeHandle.decodeDatablockMesh` / `datablock_mesh`). */
+/** One datablock decoded by the core (`datablockMesh` / `datablock_mesh`). */
 declare interface ModuleMeshView {
     readonly positions: Float32Array;
     readonly normals: Float32Array;
@@ -1167,6 +1278,15 @@ declare type QualityPreset = 'LOW' | 'MEDIUM' | 'HIGH' | 'ULTRA' | 'CUSTOM';
 
 declare type Renderer = FilamentNs.Renderer;
 
+/** How `renderNow` paints: `neverSkip` draws the frame the renderer asks to skip. */
+export declare type RenderOptions = NonNullable<Parameters<ScenePlayer['renderNow']>[0]>;
+
+/** How one {@link FilamentEngineHandle.render} call paints. */
+declare interface RenderOptions_2 {
+
+    readonly neverSkip?: boolean | undefined;
+}
+
 /**
  * The page's render knobs: `msaa` (on or off), `msaaSamples` (2, 4 or 8), and `bloom`, `shadows`,
  * `depthOfField` (`false` switches it off, `true` keeps the scene's); unset or `null` = the scene's.
@@ -1184,6 +1304,8 @@ declare interface RenderOverrides_2 {
     shadows?: boolean | null;
     /** `false` switches depth of field off; `true` keeps the scene's. */
     depthOfField?: boolean | null;
+
+    temporalEffects?: boolean | null;
 }
 
 declare interface RenderSettings {
@@ -1207,6 +1329,18 @@ declare interface RenderSettings {
     screenSpaceReflections?: ScreenSpaceReflectionsOptions;
     pixelation?: PixelationOptions;
 }
+
+/** A frame size the page said: `width` × `height` in device pixels, and the pixels a point. */
+export declare type RenderSize = NonNullable<ScenePlayer['renderSize']>;
+
+
+declare interface RenderSize_2 {
+    readonly width: number;
+    readonly height: number;
+    readonly pixelsPerPoint: number;
+}
+
+declare type RenderSizeArgs = [width: number, height: number, pixelsPerPoint?: number | undefined] | [size: null];
 
 /**
  * Environment fully resolved to renderer inputs by the caller (preset registry
@@ -1275,10 +1409,17 @@ export declare interface SceneDownload {
 
 export declare type SceneEvent = Parameters<Parameters<ScenePlayer['onEvent']>[0]>[0];
 
+/**
+ * `SceneEvent` on the wire — payload keys sorted (byte-stable across runtimes).
+ */
 declare interface SceneEvent_2 {
-    /** The event's public name (`events[].name`). */
+    /**
+     * The event's public name (`events[].name`).
+     */
     name: string;
-    /** The reporting action's constant payload (B1 scalar kinds). */
+    /**
+     * The reporting action's constant payload (B1 scalar kinds).
+     */
     payload: Record<string, number | boolean | string>;
 }
 
@@ -1318,10 +1459,15 @@ declare class ScenePlayer {
     private viewport;
 
     private scrollFrame;
-    /** The density last handed to the engine with the frame size; `NaN` before the first. */
-    private sizedScale;
+    /** The host's explicit frame (`setRenderSize`); `null` = the canvas' CSS box × the density. */
+    private frameSize;
+    /** The frame the engine was last told; `null` before the first and for a new engine. */
+    private sized;
+    /** The open frame session (`beginFrames`); `null` = none. */
+    private openFrames;
     private readonly eventHandlers;
     private readonly stateHandlers;
+    private readonly inputHandlers;
     private readonly warned;
     /** `code:pointer` of the problems already reported to `onProblem` since the last load. */
     private readonly reported;
@@ -1332,8 +1478,13 @@ declare class ScenePlayer {
     private readonly images;
     private constructor();
     static create(options: ScenePlayerOptions): Promise<ScenePlayer>;
-    /** The archive's bytes → the scene on the canvas, its first frame applied. */
+    private static start;
+    /**
+     * The archive's bytes → the scene on the canvas, its first frame applied and its first pictures
+     * on. A load the page's policy ended names what it refused (`PolicyRefusalError`).
+     */
     load(archive: Uint8Array): Promise<void>;
+    private loadArchive;
     /**
      * The pictures the first tick asked for (a generator's leaf maps, node-material layers) on their
      * slots, then the frame drawn again: the scene a host is told is loaded wears them, as on iOS,
@@ -1362,7 +1513,8 @@ declare class ScenePlayer {
      * runtime — the scene's state machine, inputs, time and the host's bindings — and the CPU copies
      * the scene was built from stay for `restoreRenderer`. Until then `tick`, `advance` and
      * `renderNow` do nothing (the scene stands still) and `load` throws; inputs, triggers, pictures
-     * and sound reach the runtime as before.
+     * and sound reach the runtime as before. An open frame session is closed (its frames so far
+     * stand; the frame size is the one before it): after `restoreRenderer` the host begins another.
      */
     loseRenderer(): void;
 
@@ -1403,8 +1555,14 @@ declare class ScenePlayer {
      * runs it for a new runtime, `restoreRenderer` for the kept one on a new engine.
      */
     private mountScene;
-    /** Advance the scene by `dtSec` (clamped to 100 ms), apply the frame and draw it. */
-    tick(dtSec: number): void;
+    /**
+     * Advance the scene by `dtSec` (clamped to 100 ms), apply the frame and draw it. `true` when a
+     * frame was painted; `false` when there is no scene to draw (none loaded, the context lost, the
+     * player disposed), the runtime threw (a problem says so), nothing changed since the last
+     * painted frame, or Filament asked to skip the frame — the state has advanced all the same, and
+     * `renderNow({ neverSkip: true })` paints it.
+     */
+    tick(dtSec: number): boolean;
 
     advance(scriptJson: string): {
         readonly stopped: {
@@ -1412,6 +1570,7 @@ declare class ScenePlayer {
             reason: string;
         } | null;
     } | null;
+    /** Start the loop. Throws while a frame session is open: its host steps the scene itself. */
     play(): void;
     pause(): void;
     get isPlaying(): boolean;
@@ -1439,13 +1598,17 @@ declare class ScenePlayer {
      * defaults are drawn).
      */
     get sceneRenderSettings(): RenderSettings | null;
+    /** The knobs the core lays: the host's, and over them a frame session's `temporalEffects: false`. */
+    private drawnKnobs;
     /** What the scene is drawn with: the core's laying of the knobs over the scene's settings. */
     private drawnRenderSettings;
     /**
      * Draw the current state again (a resize, a probe) without advancing the clock; `true` when a
-     * frame was painted (Filament skips a `beginFrame` that comes too soon after the last).
+     * frame was painted. Filament asks to skip a frame while the GPU has not finished the frame two
+     * frames back — in one task, every frame after the second (`RenderOptions`): `false` then,
+     * unless `neverSkip` is set, which paints it.
      */
-    renderNow(): boolean;
+    renderNow(options?: RenderOptions_2): boolean;
     setBinding(name: string, value: BindingValue_2): void;
     trigger(name: string): void;
 
@@ -1460,6 +1623,14 @@ declare class ScenePlayer {
     setViewport(width: number, height: number): void;
 
     resize(dpr?: number): void;
+
+    setRenderSize(...args: RenderSizeArgs): void;
+    /** The frame size the host set (`setRenderSize`); `null` while the buffer follows the layout. */
+    get renderSize(): RenderSize_2 | null;
+
+    beginFrames(options: FrameSessionOptions): FrameSession;
+    /** The open frame session; `null` when none is. */
+    get frames(): FrameSession | null;
     pointer(phase: PointerPhase_2, x: number, y: number): void;
     pick(x: number, y: number): PointerHit_2[];
 
@@ -1481,6 +1652,8 @@ declare class ScenePlayer {
     }[];
     onEvent(handler: (event: SceneEvent_2) => void): Unsubscribe_2;
     onStateChange(handler: (change: StateChange_2) => void): Unsubscribe_2;
+
+    onInputChange(handler: (change: InputChange_2) => void): Unsubscribe_2;
     /**
      * Play a track through WebAudio and let the scene hear it as `options.input` (default `music`):
      * a URL, the file's bytes or a decoded `AudioBuffer`, decoded by the browser. Resolves once
@@ -1505,6 +1678,8 @@ declare class ScenePlayer {
     audioInputs(): string[];
 
     setImage(name: string, source: HostPictureSource): Promise<HostImageOutcome>;
+
+    setImagePixels(name: string, pixels: HostPicturePixels): void;
     /**
      * A picture for image input `name` is on its way before the app has its bytes (its own picker,
      * a download): the scene sees `'loading'` (a spinner), the picture shown stays. A `setImage`
@@ -1527,6 +1702,16 @@ declare class ScenePlayer {
     private applyFrame;
 
     private applyPalettes;
+
+    private assertRepeatableSettings;
+
+    private onTheWay;
+    /** Resolves once nothing is on its way, or `frames` is no longer the open session. */
+    private landed;
+    /** A session's `end()`: the frame size, the host's knobs and the loop as they were. */
+    private endFrames;
+
+    private sizeFrame;
     private render;
     /** Width / height of the drawing buffer — the aspect the camera is applied with. */
     private canvasAspect;
@@ -1539,6 +1724,17 @@ declare class ScenePlayer {
     private pushScroll;
     private pushViewport;
     private deliver;
+    /**
+     * `value` to every handler of one kind. A handler that throws does not stop the others or the
+     * tick that called them (a throw out of the loop's frame would end the loop): it is a `host`
+     * problem, once per kind of handler.
+     */
+    private tell;
+    /**
+     * The core compares the inputs while `on` (`inputChanges` in its tick answers); the values as
+     * they stand are the base. A runtime file older than the call cannot observe: one problem.
+     */
+    private observeInputs;
 
     private textProblem;
     private problem;
@@ -1546,6 +1742,8 @@ declare class ScenePlayer {
     private imageProblem;
     private warnOnce;
     private assertLive;
+    /** What a frame session rules out while it is open: the loop, another scene, sound. */
+    private refuseInFrames;
 }
 
 declare interface ScenePlayerOptions {
@@ -1563,6 +1761,8 @@ declare interface ScenePlayerOptions {
     readonly runtimeBuild?: RuntimeBuild | PromiseLike<RuntimeBuild> | undefined;
 
     readonly quality?: FilamentQuality | undefined;
+
+    readonly contextAttributes?: ContextAttributes_2 | undefined;
     /** The SDK IBL presets, when the host serves them. */
     readonly presetEnvironment?: EnvironmentSources['preset'] | undefined;
     /** Every problem the frame or the runtime reports; default: `console.warn`, once per pointer. */
@@ -1716,9 +1916,13 @@ declare interface SsaoOptions {
 export declare type StateChange = Parameters<Parameters<ScenePlayer['onStateChange']>[0]>[0];
 
 declare interface StateChange_2 {
-    /** Layer index in execution order — `currentState()` reads the last layer. */
+    /**
+     * Layer index in execution order — `currentState()` reads the last layer.
+     */
     layerIndex: number;
-    /** Layer slug (`layers[].id`; the SM's own id for a legacy single graph). */
+    /**
+     * Layer slug (`layers[].id`; the SM's own id for a legacy single graph).
+     */
     layerId: string;
     from: string;
     to: string;
@@ -1797,9 +2001,10 @@ export declare class TrideScene {
     /**
      * A `.trd` by URL or bytes → the scene on the canvas, its first frame applied. A download still on
      * its way when the scene is disposed, or another `load` starts, is stopped (the promise rejects
-     * with an `AbortError`).
+     * with an `AbortError`). Rejects while a frame session is open: the scene shown stays loaded.
      */
     load(source: SceneSource): Promise<void>;
+    /** Start the loop. Throws while a frame session is open: its page steps the scene itself. */
     play(): void;
     pause(): void;
     get isPlaying(): boolean;
@@ -1825,12 +2030,20 @@ export declare class TrideScene {
     clearRenderOverrides(): void;
     /** The scene's own render settings (whatever the knobs); `null` before load or when it sets none. */
     get sceneRenderSettings(): SceneRenderSettings | null;
-    /** One step of `dtSec` seconds outside the loop (a host that drives its own clock). */
-    tick(dtSec: number): void;
+    /**
+     * One step of `dtSec` seconds outside the loop (a host that drives its own clock). `true` when
+     * a frame was painted; on `false` the scene has advanced all the same (nothing changed, or the
+     * renderer asked to skip the frame) and `renderNow({ neverSkip: true })` paints it.
+     */
+    tick(dtSec: number): boolean;
     /** A host script to its end as one frame; `stopped` names an early stop. */
     advance(scriptJson: string): AdvanceOutcome;
-    /** Paint the current state again; `true` when a frame was painted. */
-    renderNow(): boolean;
+    /**
+     * Paint the current state again; `true` when a frame was painted. The renderer asks to skip a
+     * frame the GPU is not ready for — in one task, every frame after the second: `false` then,
+     * unless `neverSkip` is set, which paints it.
+     */
+    renderNow(options?: RenderOptions): boolean;
     setInput(name: string, value: BindingValue): void;
     trigger(name: string): void;
 
@@ -1841,12 +2054,81 @@ export declare class TrideScene {
     availableBindings(): BindingInfo[];
     onEvent(handler: (event: SceneEvent) => void): Unsubscribe;
     onStateChange(handler: (change: StateChange) => void): Unsubscribe;
+    /**
+     * Hear the scene's inputs change: after each tick `handler` gets every input whose value is not
+     * what it was after the tick before, `{ name, value, previous }`, in the scene's order of
+     * inputs — one call per input per tick, with the value the tick ended on, so a value that
+     * stepped several times within one tick arrives once, `previous` being where it stood before.
+     * The page's own `setInput` / `setInputs` writes are reported like any other change, by the tick
+     * that follows them, together with the inputs computed from them; an input the scene writes
+     * itself (a drag, an action) changes in its tick, and what is computed from it a tick later.
+     * Triggers and image inputs are not reported. `advance` reports the changes of every tick of
+     * its script, each with its `step`.
+     *
+     * The handler runs after the frame and after the tick's `onStateChange` and `onEvent` handlers.
+     * A `setInput` it makes lands in the next tick and is reported by it: write back only when the
+     * value differs, or the two answer each other every tick. A handler that throws is a problem
+     * (`onProblem`); the scene plays on.
+     *
+     * The scene compares its inputs only while a handler is subscribed; subscribing and `load` take
+     * the values as they stand as the base, unreported. Works before `load`.
+     */
+    onInputChange(handler: (change: InputChange) => void): Unsubscribe;
     currentState(): string;
     layerStates(): LayerState[];
     /** The canvas' size in CSS pixels — the space the pointer speaks. */
     setViewport(width: number, height: number): void;
-    /** Size the drawing buffer to the canvas' CSS box × `dpr` and tell the scene. */
+    /**
+     * Size the drawing buffer to the canvas' CSS box × `dpr` and tell the scene. While a frame size
+     * is set (`setRenderSize`) the buffer stays that size and the scene is told the CSS box only.
+     */
     resize(dpr?: number): void;
+    /**
+     * The frame's size in device pixels, said by the page: the drawing buffer is `width` × `height`
+     * exactly, whatever the canvas' CSS size, a CSS `transform` on it and the screen's density;
+     * `pixelsPerPoint` (1 by default) is how many of them make a point of pixelation. It stays
+     * through `resize`, `load` and a restored context until `setRenderSize(null)`, which sizes the
+     * buffer as `resize()` does. The camera's aspect is `width / height`. Works before `load`; draws
+     * nothing by itself (the next `tick` or `renderNow` paints at the new size). The layout is not
+     * read: a canvas with no CSS size of its own changes its box with the buffer, and `resize()`
+     * tells the scene the new box, for the pointer.
+     *
+     * Throws, the size staying what it was: a `RangeError` for a side that is no whole number of at
+     * least 1 or is above what the WebGL context draws, and for a `pixelsPerPoint` that is no finite
+     * number above 0 (a size is never rounded or clamped); an `Error` once the scene is disposed,
+     * and for a size while the context is lost.
+     */
+    setRenderSize(...size: Parameters<ScenePlayer['setRenderSize']>): void;
+    /** The frame size the page said (`setRenderSize`); `null` while the buffer follows the layout. */
+    get renderSize(): RenderSize | null;
+    /**
+     * Begin writing frames one by one — a recorder's loop: the frame is `width` × `height` device
+     * pixels, the loop stands, and the page steps the scene itself. `session.step(dtSec)` advances
+     * the scene by `dtSec` seconds (above 0, at most 0.1) and paints the frame in the same call,
+     * every time, and answers `{ index, sceneTimeNs, pending }`; it throws when no frame was
+     * painted. The frame is the canvas: read it right after the step (`new VideoFrame(canvas)`), or
+     * at any time before the next step when the scene was created with
+     * `contextAttributes: { preserveDrawingBuffer: true }` (`session.keepsFrame`).
+     * `await session.settled()` waits for what is still on its way — pictures being decoded, a
+     * `setImage` not answered yet (`session.pending` counts them) — and never for an animation
+     * frame or a timer, so it works in a hidden window; `session.redraw()` paints the same state
+     * again. `session.end()` puts the frame size, the render knobs and the loop back.
+     *
+     * The session switches dithering, temporal anti-aliasing and dynamic resolution off, so the
+     * same state and time give the same frame, and two runs on one machine give the same frames;
+     * `temporalEffects: true` keeps the scene's settings and gives that up.
+     *
+     * One session at a time. While it is open `play`, `load` and attaching sound throw; inputs,
+     * triggers, the pointer, pictures and `advance` work. A lost context closes it: begin another
+     * after `contextRestored()`, the scene goes on from the same time.
+     *
+     * Throws, nothing changed: before `load`, while the context is lost, with a session open, when
+     * the scene hears sound (`detachAudio` first: sound follows the real clock), for a size
+     * `setRenderSize` refuses, and when the runtime refuses the knob (an older runtime file).
+     */
+    beginFrames(options: FrameSessionOptions): FrameSession;
+    /** The open frame session (`beginFrames`); `null` when none is. */
+    get frames(): FrameSession | null;
     pointer(phase: PointerPhase, x: number, y: number): void;
     pick(x: number, y: number): PointerHit[];
     /**
@@ -1897,6 +2179,23 @@ export declare class TrideScene {
      * each status as event `image.<name>`.
      */
     setImage(name: string, source: ImageSource): Promise<ImageOutcome>;
+    /**
+     * The page's picture for image input `name` as pixels — a screen the page draws itself, a frame
+     * of a stream: `{ width, height, data }`, RGBA8 with straight (not premultiplied) alpha, sRGB,
+     * rows top to bottom, each side 1…2048; an `ImageData` as it is. The call waits for nothing and
+     * answers nothing: the bytes are copied (write on in your array at once), and the scene shows
+     * the picture in the frame of the next `tick` — one of 1/60 s or longer, or `tick(0)`; a
+     * shorter step shows it once the scene reaches its next 60 Hz step, `renderNow()` alone does
+     * not. One `image.<name>` event per call. Nothing is scaled, turned or colour managed (that is
+     * `setImage`, which decodes a file), and a `setImage` still decoding for `name` ends
+     * `'superseded'`. Pixels read back from a 2D canvas were premultiplied on the way: a transparent
+     * texel comes back black; opaque colours are exact.
+     *
+     * Throws, nothing changed: before `load`; `{ kind: 'image.input', message }` for a name that is
+     * no image input, a side outside 1…2048 or not a whole number, `data` that is not 8-bit or not
+     * `width × height × 4` bytes, a `colorSpace` other than `'srgb'`.
+     */
+    setImagePixels(name: string, pixels: ImagePixels): void;
     /**
      * A picture for image input `name` is on its way before the page has its bytes (a picker, a
      * download): the scene sees `'loading'`, the picture shown stays. Throws for a name that is no
@@ -1969,6 +2268,8 @@ export declare class TrideSceneElement extends ElementBase {
     private readonly images;
     /** `setImage` calls made before a scene was ready: settled by the next load. */
     private waitingImages;
+    /** `observe-inputs`: ends the watch of the scene's inputs; `null` while nothing is watched. */
+    private stopInputWatch;
     /** `bindInput()` calls, given to every scene the element loads (they win over the attribute). */
     private readonly methodBindings;
     /** The inputs the `bind-inputs` attribute bound in the loaded scene. */
@@ -1985,7 +2286,7 @@ export declare class TrideSceneElement extends ElementBase {
     get scene(): TrideScene | null;
     connectedCallback(): void;
     disconnectedCallback(): void;
-    attributeChangedCallback(name: string, _oldValue: string | null, newValue: string | null): void;
+    attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void;
 
     get preferredFps(): number | null;
     set preferredFps(fps: number | null);
@@ -2048,7 +2349,9 @@ export declare class TrideSceneElement extends ElementBase {
     /**
      * Let the scene hear what an `<audio>` / `<video>` element plays — a file or an endless stream
      * such as internet radio. A cross-origin source needs CORS; without it the scene hears nothing and
-     * `tride-problem` says so. Start it from a user gesture (the tap's `play()`).
+     * `tride-problem` says so. Start it from a user gesture (the tap's `play()`). A page policy that
+     * refuses the tap's worklet module (no `blob:` in `script-src`) is a `tride-problem` (code `host`)
+     * and the rejection says the same.
      */
     attachAudioMedia(media: HTMLMediaElement, options?: AudioMediaAttachOptions): Promise<AudioMediaTap>;
     /** The scene stops hearing `input` (`music` by default); its track stops, a tapped element plays on. */
@@ -2063,6 +2366,19 @@ export declare class TrideSceneElement extends ElementBase {
      * no image input `name` (`{ kind: 'image.input', message }`) and once the element is disposed.
      */
     setImage(name: string, source: ImageSource): Promise<ImageOutcome>;
+    /**
+     * The page's picture for image input `name` as pixels — a screen the page draws itself, a frame
+     * of a stream: `{ width, height, data }`, RGBA8 with straight alpha, sRGB, rows top to bottom,
+     * each side 1…2048; an `ImageData` as it is. The bytes are copied by the call. On a ready
+     * scene the picture is in at once and shows in the next frame, and a wrong call throws,
+     * nothing changed (`{ kind: 'image.input', message }` for a name that is no image input, a
+     * wrong size, bytes that do not make `width × height` pixels). While the scene loads the call
+     * waits for it with the other early calls and a refusal is a `tride-problem`; with no scene
+     * coming it is a `tride-problem` too. Every scene the element loads next shows the picture. A
+     * `setImage` of `name` still on its way ends `'superseded'` once the pixels are in; a later
+     * `setImage`, `imageLoading`, `clearImage` or `setImagePixels` of `name` takes its place.
+     */
+    setImagePixels(name: string, pixels: ImagePixels): void;
     /**
      * A picture for image input `name` is on its way before the page has its bytes (a file picker,
      * a download): the scene sees `'loading'` — show a spinner on `image.<name>` — and the picture
@@ -2126,13 +2442,27 @@ export declare class TrideSceneElement extends ElementBase {
     private keepAudio;
     /** A loaded scene hears a kept source; a refusal is a problem (nobody awaits it). */
     private hearOn;
+    /**
+     * `observe-inputs` on `scene`: while the attribute is set, each change of its inputs is a
+     * `tride-input` event; the scene compares its inputs only then. A scene that went (a new `src`)
+     * took its watch with it.
+     */
+    private watchInputs;
     /** A loaded scene shows the kept pictures; the calls that waited for it settle as they do. */
     private showImages;
     /**
-     * `scene.setImage`; a scene without image input `name` refuses it and the element lets that
-     * picture go (the caller, if any, hears the refusal).
+     * The kept picture to `scene` — a file through `setImage`, pixels through `setImagePixels`; a
+     * scene without image input `name` refuses it and the element lets that picture go (the
+     * caller, if any, hears the refusal).
      */
     private giveImage;
+    /**
+     * A `setImage`, `imageLoading` or `clearImage` of input `name` overtakes the earlier calls that
+     * still wait for a scene: their `setImage` promises end `'superseded'`, their pixels are dropped.
+     */
+    private overtake;
+    /** The `setImagePixels` calls of input `name` that wait for a scene are not made: a later call came. */
+    private dropEarlyPixels;
     /** Settle the waiting `setImage` calls `which` picks with `outcome`. */
     private settleWaiting;
     /** The loop runs only while playing, on screen, with a WebGL context and not `paused`. */
@@ -2201,6 +2531,14 @@ export declare interface TrideSceneOptions {
     readonly iblBase?: string | undefined;
     /** `'production'` by default — the look a device shows. */
     readonly quality?: ScenePlayerOptions['quality'];
+    /**
+     * The canvas' WebGL context attributes, read by the browser once, when the canvas gets its
+     * context: `preserveDrawingBuffer: true` keeps each painted frame on the canvas until the next
+     * is painted, so the page reads it at any time; without it a frame is read in the task that
+     * painted it. `create` rejects for an unknown attribute, a value that is no boolean, and a
+     * canvas that already had a context made with other attributes.
+     */
+    readonly contextAttributes?: ScenePlayerOptions['contextAttributes'];
     /** Every problem the frame or the runtime reports; default: `console.warn`, once per pointer. */
     readonly onProblem?: ScenePlayerOptions['onProblem'];
 }
