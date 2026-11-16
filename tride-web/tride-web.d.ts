@@ -76,9 +76,6 @@ declare interface AudioTrackOptions {
 /** A track: its URL, the file's bytes, or audio the page decoded itself (`AudioBuffer`). */
 export declare type AudioTrackSource = AudioTrackData;
 
-/** Linear RGB. */
-declare type BackgroundColor = readonly [number, number, number];
-
 declare interface BindingDescriptor {
     name: string;
 
@@ -254,6 +251,44 @@ declare interface EnvBlobResolver {
     } | undefined;
 }
 
+
+declare interface EnvironmentFrame {
+    light: {
+        /** The entry that lights (the top one with `lights`); `null` when none does. */
+        id: string | null;
+        source: { kind: "none" } | { kind: "color"; rgb: [number, number, number] } | { kind: "map"; source: EnvironmentSource };
+        lux: number;
+        rotation: number[];
+    };
+    sky: EnvironmentSkyStack;
+    /** What glass refracts: `sky` with its bottom shown layer opaque. */
+    glass: EnvironmentSkyStack;
+    /** The frame has alpha — static for the scene. */
+    transparent: boolean;
+}
+
+/** The KTX bytes of a frame's maps; `null` where the frame has none or it could not be read. */
+declare interface EnvironmentMaps {
+    /** `<map>_ibl.ktx` of `frame.light`'s map. */
+    readonly light: Uint8Array | null;
+    /** `<map>_skybox.ktx` of `frame.sky.map` (the same map as `frame.glass.map`). */
+    readonly sky: Uint8Array | null;
+}
+
+
+declare interface EnvironmentSkyStack {
+    /** `id`: the entry whose map this is (the top shown map). */
+    map: { id: string; source: EnvironmentSource; scale: number; alpha: number; rotation: number[] } | null;
+    over: [number, number, number, number];
+    under: [number, number, number, number];
+}
+
+
+declare type EnvironmentSource =
+| { type: "color"; color: [number, number, number] }
+| { type: "preset"; name: string }
+| { type: "custom"; uid: string };
+
 declare interface EnvironmentSources {
     /** The SDK preset `name`'s IBL KTX, and its skybox when `wantSkybox`. Absent = presets unavailable. */
     readonly preset?: ((name: string, wantSkybox: boolean) => Promise<{
@@ -311,6 +346,8 @@ declare interface FilamentEngineHandle {
     hideEntity(entities: readonly Entity[]): void;
     /** Add previously-removed entity/entities back to the scene (show a node). */
     showEntity(entities: readonly Entity[]): void;
+    /** Whether `hideEntity` holds `entity` hidden now (a hidden node's own entities, glyphs included). */
+    isEntityHidden(entity: Entity): boolean;
 
     setEntityTransform(entity: Entity, position: readonly [number, number, number], rotation: readonly [number, number, number, number], scale: readonly [number, number, number]): void;
     /**
@@ -511,11 +548,12 @@ declare interface FilamentEngineHandle {
 
     decodePicture?(bytes: Uint8Array): Promise<DecodedPicture | null>;
 
-    applyManifestEnvironment(env: ResolvedEnvironment | null): void;
-
-    applyBackgroundColor(rgb: BackgroundColor): void;
-
-    applyEnvironmentMutations(mutations: readonly FilamentEnvironmentMutation[]): void;
+    applyEnvironment(frame: EnvironmentFrame, maps: EnvironmentMaps): void;
+    /**
+     * The same scene's frame after a write under the environment's pointers: intensity, rotation,
+     * colours and opacities — no texture rebuild. Bumps the scene version.
+     */
+    updateEnvironment(frame: EnvironmentFrame): void;
 
     applyRenderSettingsMutations(mutations: readonly FilamentRenderSettingsMutation[], options?: {
         readonly complete?: boolean;
@@ -537,13 +575,6 @@ declare interface FilamentEngineHandle {
     dispose(): void;
 
     isDisposed(): boolean;
-}
-
-
-declare interface FilamentEnvironmentMutation {
-    readonly property: 'rotation' | 'intensity' | 'background_color';
-    readonly component?: 0 | 1 | 2;
-    readonly value: number | readonly number[];
 }
 
 
@@ -1051,8 +1082,12 @@ declare interface MaterialGraphView {
     readonly name: string;
 
     readonly blending: 'opaque' | 'masked' | 'transparent' | 'add';
-    /** Renderables drawn with it cast shadows; `false` for `add`. Absent = they do. */
+    /** Renderables drawn with it cast shadows; `false` for `add` and a shadow catcher. Absent = they do. */
     readonly castShadows?: boolean | undefined;
+    /** Renderables drawn with it receive shadows; `false` for `add`. Absent = as `castShadows`. */
+    readonly receiveShadows?: boolean | undefined;
+
+    readonly screenRefraction?: boolean | undefined;
     readonly requires: readonly string[];
 
     readonly instanceColors?: boolean | undefined;
@@ -1342,22 +1377,6 @@ declare interface RenderSize_2 {
 
 declare type RenderSizeArgs = [width: number, height: number, pixelsPerPoint?: number | undefined] | [size: null];
 
-/**
- * Environment fully resolved to renderer inputs by the caller (preset registry
- * lookup or custom-blob retrieval happens upstream — this manager is asset-source
- * agnostic, R-OneLookupPath).
- */
-declare interface ResolvedEnvironment {
-    /** KTX1 specular-prefiltered cubemap bytes (`<name>_ibl.ktx`). Carries SH in metadata. */
-    readonly iblKtx: Uint8Array;
-    /** KTX1 skybox cubemap bytes (`<name>_skybox.ktx`); `null` → IBL-only (background hidden). */
-    readonly skyboxKtx: Uint8Array | null;
-    /** IBL intensity in lux (`IndirectLight.setIntensity`). */
-    readonly intensity: number;
-
-    readonly rotation: readonly [number, number, number];
-}
-
 declare interface RouteProblem {
     readonly pointer: string;
     readonly code: 'expression-eval-failed' | 'unsupported-target' | 'node-not-found' | 'value-shape-mismatch';
@@ -1505,7 +1524,7 @@ declare class ScenePlayer {
      * what it asks for is said once per shortfall as problem `partialDraw`.
      */
     private sceneMaterials;
-    /** The environment `view` asks for; `prepared` is dropped when resolving it fails. */
+
     private stageEnvironment;
     /**
      * The canvas' WebGL context is gone (`webglcontextlost`; the host calls `preventDefault()` so the

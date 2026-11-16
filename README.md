@@ -1,4 +1,4 @@
-# Tride Web — Tride 0.16.0
+# Tride Web — Tride 0.17.0
 
 Plays Tride scenes (`.trd`) in a web page: `<tride-scene>` is one HTML tag on top of the Tride runtime
 (WASM) and the Filament renderer (WebGL2) — the same player that draws the Tride Editor viewport. A scene
@@ -15,7 +15,7 @@ what changed — `CHANGELOG.md`.
 
 | | |
 |---|---|
-| Releases | The npm package `@trideapp/web` 0.16.0 as a `.tgz` file: the module, the runtime's WASM (full and lite), Filament, the environments |
+| Releases | The npm package `@trideapp/web` 0.17.0 as a `.tgz` file: the module, the runtime's WASM (full and lite), Filament, the environments |
 | GitHub Packages | The same package in the npm registry of this repository — to install by name, with a GitHub token |
 | `index.html`, `embed.html` | A ready static site — the pages below |
 | `tride-web/`, `filament/`, `ibl/` | The library for the site: the module with the runtime's two WASM files, Filament, the built-in environments |
@@ -39,10 +39,10 @@ secure context).
 
 ## In your project
 
-Take `trideapp-web-0.16.0.tgz` from Releases and install it — no account, no token:
+Take `trideapp-web-0.17.0.tgz` from Releases and install it — no account, no token:
 
 ```bash
-npm install ./trideapp-web-0.16.0.tgz
+npm install ./trideapp-web-0.17.0.tgz
 ```
 
 Or by name from GitHub Packages: npm asks it for a token even for a public package — a GitHub token
@@ -54,7 +54,7 @@ Or by name from GitHub Packages: npm asks it for a token even for a public packa
 ```
 
 ```bash
-npm install @trideapp/web@0.16.0
+npm install @trideapp/web@0.17.0
 ```
 
 Serve `filament/` and `ibl/` from the package (`node_modules/@trideapp/web/`) as static files of the
@@ -482,6 +482,28 @@ el.setImagePixels('photo', context.getImageData(0, 0, 160, 80));
   the page's main thread to make and decode a PNG of the same picture. A large picture every tick is a
   copy of `width × height × 4` bytes each time (16 MB at 2048 × 2048).
 
+## Transparent background
+
+A scene whose environments show nothing somewhere (the editor's Environment group is empty, every
+environment is hidden, or the shown ones are see-through) has a transparent background: the page under
+`<tride-scene>` shows through. The page needs nothing for it. The player always makes its canvas with
+`alpha: true` and `premultipliedAlpha: true`, and the tag's style sheet sets no background; keep the
+element and its parents free of a background you do not want to see. A canvas given to
+`TrideScene.create` must be one nothing has drawn on: a canvas keeps the context it was first made with.
+An opaque scene draws every pixel of its canvas, as before.
+
+What a transparent background changes:
+
+- depth of field is off (one warning);
+- bloom glows only inside the objects' outlines; vignette and fog fall on the objects only;
+- glass shows the scene's environments as it would over an opaque background (the bottom shown
+  environment at full opacity), not the page;
+- a scene whose shown opacity is keyed or driven by an input is transparent all the time, even while
+  that opacity is 100 %.
+
+A frame session (see «Frame by frame») of a transparent scene gives frames with alpha, premultiplied,
+as the canvas holds them.
+
 ## Requirements and size
 
 - WebGL2 (without it `tride-error` says "WebGL2 is not available"). Tested in Chrome and Safari on macOS and in Edge and Firefox on Windows; mobile browsers
@@ -494,6 +516,9 @@ el.setImagePixels('photo', context.getImageData(0, 0, 160, 80));
   included; with brotli ~2.8 / ~3.1 MB. A scene adds its own size, often most of it the compiled shaders of
   its node materials (~2 MB for a scene with several). A server with gzip / brotli for `.wasm`, `.js` and `.trd` makes the first load
   noticeably faster.
+- A scene saved by Tride 0.17 or later does not open in a 0.16.x player ("newer format": update
+  Tride): the scene's environments are stored as a list since 0.17. Scenes of 0.16 and earlier open
+  in 0.17 with the look they had.
 - A scene opens in the player of the same release and newer. In an older player, a scene from a newer
   editor that uses something the player does not know does not open ("newer format": update Tride); any
   other scene from a newer editor opens with a warning that part of it may not show. Take the editor from
