@@ -1,4 +1,4 @@
-# Tride Web — Tride 0.18.0
+# Tride Web — Tride 0.19.0
 
 Plays Tride scenes (`.trd`) in a web page: `<tride-scene>` is one HTML tag on top of the Tride runtime
 (WASM) and the Filament renderer (WebGL2) — the same player that draws the Tride Editor viewport. A scene
@@ -15,7 +15,7 @@ what changed — `CHANGELOG.md`.
 
 | | |
 |---|---|
-| Releases | The npm package `@trideapp/web` 0.18.0 as a `.tgz` file: the module, the runtime's WASM (full and lite), Filament, the environments |
+| Releases | The npm package `@trideapp/web` 0.19.0 as a `.tgz` file: the module, the runtime's WASM (full and lite), Filament, the environments |
 | GitHub Packages | The same package in the npm registry of this repository — to install by name, with a GitHub token |
 | `index.html`, `embed.html` | A ready static site — the pages below |
 | `tride-web/`, `filament/`, `ibl/` | The library for the site: the module with the runtime's two WASM files, Filament, the built-in environments |
@@ -39,10 +39,10 @@ secure context).
 
 ## In your project
 
-Take `trideapp-web-0.18.0.tgz` from Releases and install it — no account, no token:
+Take `trideapp-web-0.19.0.tgz` from Releases and install it — no account, no token:
 
 ```bash
-npm install ./trideapp-web-0.18.0.tgz
+npm install ./trideapp-web-0.19.0.tgz
 ```
 
 Or by name from GitHub Packages: npm asks it for a token even for a public package — a GitHub token
@@ -54,7 +54,7 @@ Or by name from GitHub Packages: npm asks it for a token even for a public packa
 ```
 
 ```bash
-npm install @trideapp/web@0.18.0
+npm install @trideapp/web@0.19.0
 ```
 
 Serve `filament/` and `ibl/` from the package (`node_modules/@trideapp/web/`) as static files of the
@@ -508,6 +508,9 @@ as the canvas holds them.
 
 - WebGL2 (without it `tride-error` says "WebGL2 is not available"). Tested in Chrome and Safari on macOS and in Edge and Firefox on Windows; mobile browsers
   should work but are not tested.
+- WebAssembly SIMD: Safari and iOS Safari 16.4 or later, Chrome and Edge 91 or later, Firefox 110 or later. In an older
+  browser `<tride-scene>` shows its error state and `tride-error` says "This browser lacks WebAssembly SIMD; Tride needs
+  Safari / iOS 16.4+, Chrome / Edge 91+, Firefox 110+"; the headless `TrideScene` rejects with the same words.
 - On Windows, browsers compile shaders for Direct3D 11, so the first open of a scene takes longer
   there: a scene with a few node materials is ready in ~9 s in Edge with an empty shader cache; later opens use the browser's
   cache.
