@@ -1,4 +1,4 @@
-# Tride Web — Tride 0.19.1
+# Tride Web — Tride 0.20.0
 
 Plays Tride scenes (`.trd`) in a web page: `<tride-scene>` is one HTML tag on top of the Tride runtime
 (WASM) and the Filament renderer (WebGL2) — the same player that draws the Tride Editor viewport. A scene
@@ -15,7 +15,7 @@ what changed — `CHANGELOG.md`.
 
 | | |
 |---|---|
-| Releases | The npm package `@trideapp/web` 0.19.1 as a `.tgz` file: the module, the runtime's WASM (full and lite), Filament, the environments |
+| Releases | The npm package `@trideapp/web` 0.20.0 as a `.tgz` file: the module, the runtime's WASM (full and lite), Filament, the environments |
 | GitHub Packages | The same package in the npm registry of this repository — to install by name, with a GitHub token |
 | `index.html`, `embed.html` | A ready static site — the pages below |
 | `tride-web/`, `filament/`, `ibl/` | The library for the site: the module with the runtime's two WASM files, Filament, the built-in environments |
@@ -39,10 +39,10 @@ secure context).
 
 ## In your project
 
-Take `trideapp-web-0.19.1.tgz` from Releases and install it — no account, no token:
+Take `trideapp-web-0.20.0.tgz` from Releases and install it — no account, no token:
 
 ```bash
-npm install ./trideapp-web-0.19.1.tgz
+npm install ./trideapp-web-0.20.0.tgz
 ```
 
 Or by name from GitHub Packages: npm asks it for a token even for a public package — a GitHub token
@@ -54,7 +54,7 @@ Or by name from GitHub Packages: npm asks it for a token even for a public packa
 ```
 
 ```bash
-npm install @trideapp/web@0.19.1
+npm install @trideapp/web@0.20.0
 ```
 
 Serve `filament/` and `ibl/` from the package (`node_modules/@trideapp/web/`) as static files of the

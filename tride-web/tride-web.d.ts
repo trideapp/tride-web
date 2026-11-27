@@ -174,6 +174,28 @@ declare interface ContextAttributes_2 {
     readonly preserveDrawingBuffer?: boolean | undefined;
 }
 
+/** The problem code of a core notice. */
+declare const CORE_NOTICE = "core.notice";
+
+
+declare interface CostDraw {
+    /** Palette slug of its look; `null` = the default look. */
+    readonly slug: string | null;
+    readonly family: PixelCostFamily;
+    /** Vertices of one instance. */
+    readonly vertices: number;
+    /** Triangles of one instance. */
+    readonly triangles: number;
+    readonly instances: number;
+    /** Its box meets the camera's frustum. */
+    readonly inView: boolean;
+    /** Share of the view its box covers (`boxOnScreen`); a batch's box holds all its instances. */
+    readonly screenShare: number;
+    readonly castsShadows: boolean;
+    /** The scene node it hangs under (the selection's draws), `null` = world. */
+    readonly host: unknown;
+}
+
 /** A picture as stb gives it: RGBA8, rows top to bottom. */
 declare interface DecodedPicture {
     readonly width: number;
@@ -211,14 +233,6 @@ export declare type DragAxes = ReturnType<ScenePlayer['dragAxes']>;
 declare interface DragAxes_2 {
     x: boolean;
     y: boolean;
-}
-
-
-declare interface DrawnStats {
-    readonly triangles: number;
-    readonly vertices: number;
-    readonly selectedTriangles: number;
-    readonly selectedVertices: number;
 }
 
 declare interface DynamicResolutionOptions {
@@ -297,7 +311,7 @@ declare interface EnvironmentSources {
     }>) | undefined;
     /** A custom environment's retained blobs (`assets/ibl/<uid>_{ibl,skybox}.ktx`). */
     readonly custom?: EnvBlobResolver | null | undefined;
-    /** Where a problem is reported; default `console.warn`. */
+
     readonly warn?: ((message: string, cause?: unknown) => void) | undefined;
 }
 
@@ -423,6 +437,19 @@ declare interface FilamentEngineHandle {
 
     setMaterialsVisible(visible: boolean): void;
 
+    setPixelCost(source: PixelCostSource | null): void;
+
+    readPixelCost(): Promise<PixelCostRead | null>;
+
+    samplePixelCost(source: PixelCostSource): Promise<PixelCostRead | null>;
+
+    costDraws(): readonly CostDraw[];
+    /** What the Pixel cost view holds now — its target and cost instances (the leak checks). */
+    readonly pixelCostResources: {
+        readonly targets: number;
+        readonly instances: number;
+    };
+
     setPolygonsVisible(visible: boolean): void;
     /**
      * The edge lines of mesh node `id` from its triangle mesh (the editor decodes the datablock),
@@ -442,11 +469,6 @@ declare interface FilamentEngineHandle {
     } | null, parent: unknown): void;
     /** Ids of the helper line sets the engine draws (`setHelperLines`). */
     helperLineIds(): string[];
-    /**
-     * Triangles and vertices the overlay counts — the visible meshes, generated meshes and clones —
-     * and the part hosted by `selectedHosts` (node entities). Hidden hosts count nothing.
-     */
-    drawnStats(selectedHosts?: readonly unknown[] | null): DrawnStats;
 
     removeOverlayEntities(entities: readonly Entity[]): void;
 
@@ -835,6 +857,9 @@ declare interface GeneratedMeshTextureRef {
     readonly texCoord?: number | null | undefined;
 }
 
+/** The level in force: the localStorage key's while it lives, else the one set. */
+export declare function getLogLevel(): LogLevel;
+
 
 declare interface GltfioLoader {
     createAsset(bytes: Parameters<FilamentNs.gltfio$AssetLoader['createAsset']>[0]): FilamentAsset | null;
@@ -985,6 +1010,21 @@ declare interface InputsSnapshot_2 {
 }
 
 export declare type LayerState = ReturnType<ScenePlayer['layerStates']>[number];
+
+/** One line Tride writes: its level, its category (`scene-player`, `filament-engine`, `core`, …), its text. */
+export declare interface LogEntry {
+    readonly level: Exclude<LogLevel, 'off'>;
+    readonly category: string;
+    readonly message: string;
+    /** What the console line carried beside the text (an error, a payload); absent = none. */
+    readonly detail?: unknown;
+}
+
+export declare type LogHandler = (entry: LogEntry) => void;
+
+
+/** How much Tride writes: each level includes the ones before it. */
+export declare type LogLevel = 'off' | 'error' | 'warning' | 'info' | 'debug';
 
 
 declare interface ManifestLightView {
@@ -1281,6 +1321,42 @@ declare interface PixelationOptions {
     size?: number;
 }
 
+/** The core's answer for one draw (WASM `DrawCost`), what the view reads of it. */
+declare interface PixelCostAnswer {
+    /** Units of one built-in unlit fragment per pixel. */
+    readonly fragment: number;
+    /** Shades every fragment and hides nothing before shading: Blend, Add, Mask. */
+    readonly stacks: boolean;
+    readonly doubleSided: boolean;
+}
+
+/** What draws a material (WASM `MaterialGraphFamily`). */
+declare type PixelCostFamily = 'mesh' | 'generated' | 'instanced';
+
+/** `slug` (`null`: the default look) drawn on `family` → the core's answer; `undefined` unknown. */
+declare type PixelCostOf = (slug: string | null, family: PixelCostFamily) => PixelCostAnswer | undefined;
+
+
+declare interface PixelCostRead {
+    readonly width: number;
+    readonly height: number;
+    /** Units summed over every pixel. */
+    readonly sum: number;
+    /** Pixels some draw covers. */
+    readonly covered: number;
+    /** Fragments shaded (opaque counts 1, every stacking layer 1 more). */
+    readonly layers: number;
+    /** The dearest pixel, units. */
+    readonly max: number;
+}
+
+/** What the host gives the view: the core's per-draw cost and the white of the scale. */
+declare interface PixelCostSource {
+    readonly costOf: PixelCostOf;
+    /** Units per pixel painted white (WASM `pixelCostBudget`). */
+    readonly budget: number;
+}
+
 export declare type PointerHit = ReturnType<ScenePlayer['pick']>[number];
 
 /** One node under a view point, nearest first; `instance` for a generator's module / clone. */
@@ -1459,6 +1535,11 @@ declare class ScenePlayer {
     private readonly canvas;
     private readonly options;
     private runtime;
+    /** The module `runtime` lives in: its core notices are taken after each tick. */
+    private core;
+    /** How many of the page's core notices (`core-notices.ts`) this player has handed to `onProblem`. */
+    private coreNoticeCursor;
+    private readonly stopNotices;
     /** The last bone palette of each skinned mesh part of the loaded scene, by `mesh:part`. */
     private readonly palettes;
     private scene;
@@ -1514,7 +1595,8 @@ declare class ScenePlayer {
     /**
      * The runtime of `archive` on `core`; a lite core that leaves out a module the scene needs
      * (text) gives way to the full build — a scene is never drawn without it (a second instance on a
-     * page whose module runs the lite one).
+     * page whose module runs the lite one). The core's notices are taken before (the first take
+     * tells the module to leave the console to the player) and after the open (its own notices).
      */
     private openRuntime;
 
@@ -1756,6 +1838,12 @@ declare class ScenePlayer {
     private observeInputs;
 
     private textProblem;
+    /**
+     * The core's new notices taken from this player's module, and the page's notices this player has
+     * not handed out yet given to `onProblem` — after each tick, outside any runtime call. Without
+     * `onProblem` nothing more: `pullCoreNotices` wrote them to the log.
+     */
+    private deliverCoreNotices;
     private problem;
 
     private imageProblem;
@@ -1784,7 +1872,11 @@ declare interface ScenePlayerOptions {
     readonly contextAttributes?: ContextAttributes_2 | undefined;
     /** The SDK IBL presets, when the host serves them. */
     readonly presetEnvironment?: EnvironmentSources['preset'] | undefined;
-    /** Every problem the frame or the runtime reports; default: `console.warn`, once per pointer. */
+    /**
+     * Every problem the frame or the runtime reports; default: the log (`warning`), once per
+     * pointer. The core's notices (pointer `core`, code `core.notice`) come here whatever the log's
+     * level, the ones the page took before this player loaded included.
+     */
     readonly onProblem?: ((problem: ScenePlayerProblem) => void) | undefined;
 }
 
@@ -1792,7 +1884,7 @@ declare interface ScenePlayerProblem {
     /** What the problem is about: a pointer, `<tick>`, `audio.<input>` / `image.<input>` / `text.<input>`. */
     readonly pointer: string;
     /** `host`: something the page itself did — an attribute, a call the element could not take. */
-    readonly code: RouteProblem['code'] | 'diagnostic' | 'runtime' | 'audio' | 'image' | 'host' | 'text.missing-glyphs' | 'camera.unknown' | MaterialPackageProblemCode;
+    readonly code: RouteProblem['code'] | 'diagnostic' | 'runtime' | 'audio' | 'image' | 'host' | 'text.missing-glyphs' | 'camera.unknown' | typeof CORE_NOTICE | MaterialPackageProblemCode;
     readonly message: string;
 }
 
@@ -1914,6 +2006,12 @@ export declare interface SetInputsOptions {
      */
     readonly image?: ((name: string, url: string) => Promise<ImageOutcome>) | undefined;
 }
+
+/** Where the lines that pass the level go; `null` = the console. */
+export declare function setLogHandler(next: LogHandler | null): void;
+
+/** How much Tride writes from now on (`'warning'` by default). */
+export declare function setLogLevel(level: LogLevel): void;
 
 declare type ShadowType = 'PCF' | 'VSM' | 'DPCF' | 'PCSS' | 'PCFd';
 
@@ -2558,7 +2656,10 @@ export declare interface TrideSceneOptions {
      * canvas that already had a context made with other attributes.
      */
     readonly contextAttributes?: ScenePlayerOptions['contextAttributes'];
-    /** Every problem the frame or the runtime reports; default: `console.warn`, once per pointer. */
+    /**
+     * Every problem the frame or the runtime reports; default: the log (`warning`, `setLogLevel`),
+     * once per pointer. The core's notices (code `core.notice`) come here at any level.
+     */
     readonly onProblem?: ScenePlayerOptions['onProblem'];
 }
 
